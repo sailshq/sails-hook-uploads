@@ -1,0 +1,32 @@
+{
+  "name": "sails-hook-grunt",
+  "version": "0.0.1",
+  "description": "A hook for wrapping file upload support with async/await in Sails.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node ./node_modules/mocha/bin/mocha -t 15000"
+  },
+  "keywords": [
+    "skipper",
+    "uploads",
+    "hook",
+    "sails",
+    "sails-hook"
+  ],
+  "author": "The Sails Company",
+  "license": "MIT",
+  "bugs": {
+    "url": "http://sailsjs.com/bugs"
+  },
+  "homepage": "http://sailsjs.com",
+  "dependencies": {
+    "@sailshq/lodash": "^3.10.2",
+  },
+  "sails": {
+    "isHook": true,
+    "hookName": "grunt"
+  },
+  "devDependencies": {
+    "mocha": "3.0.2"
+  }
+}
