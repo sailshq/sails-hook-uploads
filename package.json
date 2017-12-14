@@ -21,13 +21,16 @@
   "homepage": "http://sailsjs.com",
   "dependencies": {
     "@sailshq/lodash": "^3.10.2",
-    "machinepack-strings": "^6.0.0-1"
+    "flaverr": "^1.9.0",
+    "machinepack-strings": "^6.0.0-1",
+    "parley": "^3.3.4"
   },
   "sails": {
     "isHook": true,
     "hookName": "uploads"
   },
   "devDependencies": {
+    "eslint": "4.13.1",
     "mocha": "3.0.2"
   }
 }
