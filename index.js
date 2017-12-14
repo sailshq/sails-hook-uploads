@@ -8,6 +8,7 @@ var _ = require('@sailshq/lodash');
 var flaverr = require('flaverr');
 var parley = require('parley');
 var verifyUpstream = require('./private/verify-upstream');
+var strings = require('machinepack-strings');
 
 
 /**
@@ -169,7 +170,7 @@ module.exports = function defineUploadsHook(sails) {
                     //  • the file's original extension (like ".jpg") if `extname` option was provided
                     //    (or otherwise falling back to ".upload")
                     else if (skipperOpts.saveAs === undefined) {
-                      return proceed(undefined, sails.stdlib('strings').uuid().execSync()+(skipperOpts.extname?skipperOpts.extname:'.upload'));
+                      return proceed(undefined, strings.uuid().now()+(skipperOpts.extname?skipperOpts.extname:'.upload'));
                     }
                     else {
                       throw new Error('Invalid `saveAs`:  If specified, must be a string or a function.');

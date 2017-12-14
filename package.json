@@ -20,7 +20,8 @@
   },
   "homepage": "http://sailsjs.com",
   "dependencies": {
-    "@sailshq/lodash": "^3.10.2"
+    "@sailshq/lodash": "^3.10.2",
+    "machinepack-strings": "^6.0.0-1"
   },
   "sails": {
     "isHook": true,
