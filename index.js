@@ -210,7 +210,7 @@ module.exports = function defineUploadsHook(sails) {
 
                       var onReceiverError = (err)=>{
                         receiver.removeListener('error', onReceiverError);
-                        receiver.removeListener('finish', onReceiverFinish);
+                        receiver.removeListener('finish', onReceiverFinish);//eslint-disable-line no-use-before-define
                         return proceed(err);
                       };//ƒ
                       receiver.once('error', onReceiverError);
@@ -344,7 +344,7 @@ module.exports = function defineUploadsHook(sails) {
             // IF one occurs before the first "readable" event fires.  (In other words, this allows us
             // to more gracefully handle errors that might occur before a file even BEGINS to download.)
             var onDownloadError = (err)=>{
-              stream.removeListener('readable', onFirstReadable);
+              stream.removeListener('readable', onFirstReadable);//eslint-disable-line no-use-before-define
               return done(flaverr({
                 message: 'Download failed.  '+err.message,
                 raw: err
