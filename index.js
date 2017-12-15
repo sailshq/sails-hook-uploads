@@ -31,7 +31,12 @@ module.exports = function defineUploadsHook(sails) {
 
     configure: function(){
       if (process.env.NODE_ENV === 'production' && !sails.config.uploads.adapter) {
-        throw new Error('In production, `sails.config.uploads.adapter` must be set explicitly!');
+        if (sails.config.environment === 'staging') {
+          sails.log.warn('Using default, built-in filesystem adapter for uploads...');
+          sails.log.warn('(But remember: In production, `sails.config.uploads.adapter` must be set explicitly!)');
+        } else {
+          throw new Error('In production, `sails.config.uploads.adapter` must be set explicitly!');
+        }
       }
     },
 
