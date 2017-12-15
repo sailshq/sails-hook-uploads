@@ -8,6 +8,7 @@ var _ = require('@sailshq/lodash');
 var flaverr = require('flaverr');
 var parley = require('parley');
 var Strings = require('machinepack-strings');
+var defaultFilesystemAdapter = require('skipper-disk');
 var verifyUpstream = require('./private/verify-upstream');
 
 
@@ -48,13 +49,6 @@ module.exports = function defineUploadsHook(sails) {
     initialize: function (done) {
 
       sails.log.debug('Initializing custom hook (`uploads`)');
-
-      // Load up the default filesystem adapter, if appropriate.
-      var defaultFilesystemAdapter;
-      if (process.env.NODE_ENV !== 'production'){
-        defaultFilesystemAdapter = require('skipper-disk');
-      }//ﬁ
-
 
       /**
        * .upload()
