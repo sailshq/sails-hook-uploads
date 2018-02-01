@@ -52,6 +52,46 @@ module.exports = function defineUploadsHook(sails) {
       sails.log.debug('Initializing custom hook (`uploads`)');
 
       /**
+       * .uploadAny()
+       *
+       * Upload all incoming files from any upstream.
+       *
+       * @param {Ref} req
+       * @param {Dictionary?} moreOptions
+       * @param {Function?} _explicitCbMaybe
+       * @param {Error?} omen
+       *
+       * @returns {Deferred}
+       *          @returns {Array}
+       *              @of {Dictionary}
+       *                  @property {String} fd
+       *                  @property {String} type
+       *                  @property {String} field
+       */
+      sails.uploadAny = function (req, moreOptions, _explicitCbMaybe, omen){//eslint-disable-line no-unused-vars
+
+        throw new Error('Not implemented yet');
+        // var explicitCb = _.isFunction(moreOptions) ? moreOptions : _explicitCbMaybe;
+
+        // omen = omen || flaverr.omen(sails.uploadAny);
+        // //^In development and when debugging, we use an omen for better stack traces.
+
+        // // TODO: get all upstreams somehow
+        // // TODO: then drain them all
+        // // return parley(
+        // //   function (done){
+        // //     verifyUpstream(upstream, omen);
+        // //     var skipperOpts = _.extend({}, sails.config.uploads, moreOptions);
+        // //     upstream.upload(skipperOpts, done);//_∏_
+        // //   },
+        // //   explicitCb||undefined,
+        // //   undefined,
+        // //   undefined,
+        // //   omen
+        // // );
+      };
+
+      /**
        * .upload()
        *
        * Upload all of the incoming files in the specified upstream.
@@ -476,6 +516,25 @@ module.exports = function defineUploadsHook(sails) {
 
       return done();
 
+    },
+
+    routes: {
+      before: {
+        '/*': (req, res, next)=>{
+
+          // Expose `req.upload(…)` method, if it is not already set
+          // (this is allow it to be overridden, if absolutely necessary)
+          if (req.upload === undefined) {
+            req.upload = function (moreOptions, _explicitCbMaybe){//eslint-disable-line no-unused-vars
+              // throw new Error('Not implemented yet');
+              var omen = flaverr.omen(req.upload);
+              return sails.uploadAny(req, moreOptions, _explicitCbMaybe, omen);
+            };
+          }//ﬁ
+
+          next();
+        }//œ
+      }
     }
 
   };
