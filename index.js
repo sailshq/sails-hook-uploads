@@ -412,6 +412,102 @@ module.exports = function defineUploadsHook(sails) {
       };//ƒ
 
 
+      /**
+       * .transloadOne()
+       * .transload()
+       *
+       * (just aliases to help avoid typos/confusion)
+       *
+       * @throws {Error}
+       */
+      sails.cp = sails.transload = function (){
+        throw new Error(
+          'Did you mean `sails.cp()`?\n'+
+          '\n'+
+          'Example usage:\n'+
+          '\n'+
+          '    var file = await sails.cp(srcFd, srcOpts, destOpts);\n'+
+          '    await User.update(1).set({ avatarFd: file.fd });'
+        );
+      };//ƒ
+
+
+      /**
+       * .cp()
+       *
+       * Stream a file from one place to another.
+       *
+       * > This is a combination of .startDownload() and .uploadOne().
+       * > See https://trello.com/c/ykPMDusk for more information.
+       *
+       * @param {String} srcFd
+       * @param {Dictionary} moreSrcOptions
+       * @param {Dictionary} moreDestOptions
+       * @param {Function?} _explicitCbMaybe
+       *
+       * @returns {Deferred}
+       *          @returns {Dictionary}
+       *              @property {String} fd   [the new file descriptor]
+       *              @property {String} type
+       */
+      sails.cp = function (srcFd, moreSrcOptions, moreDestOptions, _explicitCbMaybe){
+
+        var explicitCb = _.isFunction(moreDestOptions) ? moreDestOptions : _explicitCbMaybe;
+
+        var omen = flaverr.omen(sails.cp);
+        //^In development and when debugging, we use an omen for better stack traces.
+
+        return parley(
+          (done)=>{
+
+            var srcOpts = _.extend({}, sails.config.uploads, moreSrcOptions);
+            var destOpts = _.extend({}, sails.config.uploads, moreDestOptions);
+
+            // Use a little pocket function to load up the appropriate adapters:
+            // for the source AND for the destination.
+            // (During simple uploads, we just rely on Skipper for this part.
+            // But here, for this use case, we have to do it ourselves.)
+            var srcAdapter = (()=>{
+              let _adapter = srcOpts.adapter || defaultFilesystemAdapter;
+              if (_.isFunction(_adapter)) {
+                _adapter = _adapter(srcOpts);
+              }
+              return _adapter;
+            })();//†
+
+            var destAdapter = (()=>{
+              let _adapter = destOpts.adapter || defaultFilesystemAdapter;
+              if (_.isFunction(_adapter)) {
+                _adapter = _adapter(destOpts);
+              }
+              return _adapter;
+            })();//†
+
+            // TODO: finish this
+            // parley(()=>{
+
+            // });
+            // var readable = await sails.startDownload(srcFd, srcOpts);
+            // await sails.uploadOne(readable, destOpts);
+            // var readable = await sails.startDownload(srcFd, srcOpts);
+
+            // // readable.once('error', (err)=>{
+            // // });//œ
+
+            return done();
+          },
+          explicitCb||undefined,
+          undefined,
+          undefined,
+          omen
+        );
+      };//ƒ
+
+
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      // FUTURE: `await sails.mv(fd, destWritable, moreOptions)`
+      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
       /**
        * .rm()
@@ -455,7 +551,7 @@ module.exports = function defineUploadsHook(sails) {
           undefined,
           omen
         );
-      };
+      };//ƒ
 
 
       /**
@@ -506,16 +602,7 @@ module.exports = function defineUploadsHook(sails) {
           undefined,
           omen
         );
-      };
-
-
-      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-      // FUTURE: `await sails.mv(fd, destWritable, moreOptions)`
-      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-      // FUTURE: `await sails.cp(fd, destWritable, moreOptions)`
-      // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      };//ƒ
 
 
       return done();
