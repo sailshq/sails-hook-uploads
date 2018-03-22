@@ -218,7 +218,7 @@ module.exports = function defineUploadsHook(sails) {
                     else {
                       throw new Error('Invalid `saveAs`:  If specified, must be a string or a function.');
                     }
-                  })(function (err, basename) {
+                  })((err, basename)=>{
                     if (err) { return done(err); }
 
                     if (_.isString(skipperOpts.dirname)) {
@@ -290,7 +290,7 @@ module.exports = function defineUploadsHook(sails) {
             }
 
             // Otherwise IWMIH, this is an upstream:
-            upstreamOrFileStream.upload(skipperOpts, function(err, uploadedFiles) {
+            upstreamOrFileStream.upload(skipperOpts, (err, uploadedFiles)=>{
               if (err) { return done(err); }
               if (uploadedFiles.length > 1) {
                 return done(flaverr({
@@ -360,7 +360,7 @@ module.exports = function defineUploadsHook(sails) {
         //^In development and when debugging, we use an omen for better stack traces.
 
         return parley(
-          function (done){
+          (done)=>{
 
             var downloadOpts = _.extend({}, sails.config.uploads, moreOptions);
 
@@ -430,7 +430,7 @@ module.exports = function defineUploadsHook(sails) {
         //^In development and when debugging, we use an omen for better stack traces.
 
         return parley(
-          function (done){
+          (done)=>{
             var adapterOpts = _.extend({}, sails.config.uploads, moreOptions);
 
             // Use a little pocket function to load up the appropriate adapter.
@@ -474,7 +474,7 @@ module.exports = function defineUploadsHook(sails) {
         //^In development and when debugging, we use an omen for better stack traces.
 
         return parley(
-          function (done){
+          (done)=>{
             var adapterOpts = _.extend({}, sails.config.uploads);
 
             // Use a little pocket function to load up the appropriate adapter.
