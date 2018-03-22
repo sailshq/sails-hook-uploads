@@ -356,7 +356,7 @@ module.exports = function defineUploadsHook(sails) {
 
         var explicitCb = _.isFunction(moreOptions) ? moreOptions : _explicitCbMaybe;
 
-        var omen = process.env.NODE_ENV !== 'production' || process.env.DEBUG ? flaverr({}, new Error('omen'), sails.startDownload) : undefined;
+        var omen = flaverr.omen(sails.startDownload);
         //^In development and when debugging, we use an omen for better stack traces.
 
         return parley(
