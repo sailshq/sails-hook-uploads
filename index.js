@@ -314,14 +314,15 @@ module.exports = function defineUploadsHook(sails) {
 
       /**
        * .download()
+       * .downloadOne()
        *
-       * (just an alias to help avoid typos/confusion)
+       * (just aliases to help avoid typos/confusion)
        *
        * @throws {Error}
        *
        * > https://trello.com/c/r86sweSs/159-sailsdownload
        */
-      sails.download = function (){
+      sails.download = sails.downloadOne = function (){
         throw new Error(
           'Did you mean `sails.startDownload()`?\n'+
           '\n'+
