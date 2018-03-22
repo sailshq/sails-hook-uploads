@@ -413,14 +413,14 @@ module.exports = function defineUploadsHook(sails) {
 
 
       /**
-       * .transloadOne()
        * .transload()
+       * .transloadOne()
        *
        * (just aliases to help avoid typos/confusion)
        *
        * @throws {Error}
        */
-      sails.cp = sails.transload = function (){
+      sails.transload = sails.transloadOne = function (){
         throw new Error(
           'Did you mean `sails.cp()`?\n'+
           '\n'+
@@ -463,38 +463,15 @@ module.exports = function defineUploadsHook(sails) {
             var srcOpts = _.extend({}, sails.config.uploads, moreSrcOptions);
             var destOpts = _.extend({}, sails.config.uploads, moreDestOptions);
 
-            // Use a little pocket function to load up the appropriate adapters:
-            // for the source AND for the destination.
-            // (During simple uploads, we just rely on Skipper for this part.
-            // But here, for this use case, we have to do it ourselves.)
-            var srcAdapter = (()=>{
-              let _adapter = srcOpts.adapter || defaultFilesystemAdapter;
-              if (_.isFunction(_adapter)) {
-                _adapter = _adapter(srcOpts);
-              }
-              return _adapter;
-            })();//†
+            sails.startDownload(srcFd, srcOpts).exec((err, readable)=>{
+              if (err) { return done(err); }
+              readable.once('error', (err)=>{ return done(err); });//œ
 
-            var destAdapter = (()=>{
-              let _adapter = destOpts.adapter || defaultFilesystemAdapter;
-              if (_.isFunction(_adapter)) {
-                _adapter = _adapter(destOpts);
-              }
-              return _adapter;
-            })();//†
-
-            // TODO: finish this
-            // parley(()=>{
-
-            // });
-            // var readable = await sails.startDownload(srcFd, srcOpts);
-            // await sails.uploadOne(readable, destOpts);
-            // var readable = await sails.startDownload(srcFd, srcOpts);
-
-            // // readable.once('error', (err)=>{
-            // // });//œ
-
-            return done();
+              sails.uploadOne(readable, destOpts).exec((err, file)=>{
+                if (err) { return done(err); }
+                return done(undefined, file);
+              });//_∏_
+            });//_∏_
           },
           explicitCb||undefined,
           undefined,
