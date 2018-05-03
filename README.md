@@ -22,4 +22,4 @@ For more usage tips, see the [Platzi course on Sails.js](https://courses.platzi.
 
 MIT
 
-&copy; 2017  Rachael Shaw, Mike McNeil
+&copy; 2017-present  Rachael Shaw, Mike McNeil
