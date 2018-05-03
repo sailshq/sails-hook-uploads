@@ -12,7 +12,7 @@ npm install sails-hook-uploads
 ```
 
 ```js
-var uploaded = sails.uploadOne(inputs.myFile);
+var uploaded = await sails.uploadOne(inputs.myFile);
 ```
 
 For more usage tips, see the [Platzi course on Sails.js](https://courses.platzi.com).
