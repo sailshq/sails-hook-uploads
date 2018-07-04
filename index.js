@@ -78,8 +78,8 @@ module.exports = function defineUploadsHook(sails) {
       //   // omen = omen || flaverr.omen(sails.uploadAny);
       //   // //^In development and when debugging, we use an omen for better stack traces.
 
-      //   // // TODO: get all upstreams somehow
-      //   // // TODO: then drain them all
+      //   // // FUTURE: get all upstreams somehow
+      //   // // FUTURE: then drain them all
       //   // // return parley(
       //   // //   function (done){
       //   // //     verifyUpstream(upstream, omen);
