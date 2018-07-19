@@ -296,6 +296,7 @@ module.exports = function defineUploadsHook(sails) {
               if (err) { return done(err); }
               if (uploadedFiles.length > 1) {
                 return done(flaverr({
+                  code: 'E_TOO_MANY_FILES',
                   message: 'Too many files!  .uploadOne() expected the upstream to contain exactly one file upload, but instead it contained '+uploadedFiles.length+'.'
                 }, omen));
                 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
