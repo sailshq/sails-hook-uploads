@@ -184,6 +184,7 @@ module.exports = function defineUploadsHook(sails) {
                       'Invalid stream: Any chance you forgot to include `files: [\'nameOfSomeInput\']` at the top level of your action?  Otherwise, make sure you are using a valid incoming stream: either an upstream or a usable Node.js binary Readable stream (e.g. from `fs.createReadStream(…)` or `require(\'request\').get(…)`)'
                     ));
                   }//•
+                  console.log('ok it looks like it is probably usable!');
 
                   // If this is probably a usable readable stream, try to use it.
                   // But first attach the `fd` property. (Otherwise, the adapter will choke.)
@@ -223,6 +224,9 @@ module.exports = function defineUploadsHook(sails) {
                   })((err, basename)=>{
                     if (err) { return done(err); }
 
+                    console.log('ok got the basename:', basename);
+                    console.log('skipperOpts.dirname:', skipperOpts.dirname);
+
                     if (_.isString(skipperOpts.dirname)) {
                       upstreamOrFileStream.fd = path.join(skipperOpts.dirname, basename);
                     }
@@ -242,6 +246,7 @@ module.exports = function defineUploadsHook(sails) {
                       }
                       return _adapter;
                     })();
+                    console.log('the `.fd` property of the stream is :', upstreamOrFileStream.fd);
 
                     // Note that these listeners are handled with inline functions
                     // only because there is no other way to unbind _only_ them
@@ -251,6 +256,7 @@ module.exports = function defineUploadsHook(sails) {
                     // Still, to mitigate the complexity of this code, we use a self-calling
                     // function to wrap it all up.
                     ((proceed)=>{
+                      console.log('calling out to receiver with:',skipperOpts);
                       var receiver = adapter.receive(skipperOpts);
 
                       var onReceiverError = (err)=>{
@@ -267,10 +273,12 @@ module.exports = function defineUploadsHook(sails) {
                       };//ƒ
                       receiver.once('finish', onReceiverFinish);
 
+                      console.log('WRITING!!!');
                       receiver.write(upstreamOrFileStream);
                       receiver.end();
 
                     })((err)=>{
+                      console.log('proceed!');
                       if (err) { return done(err); }
                       return done(undefined, {
                         fd: upstreamOrFileStream.fd,
