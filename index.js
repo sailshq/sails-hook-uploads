@@ -228,15 +228,17 @@ module.exports = function defineUploadsHook(sails) {
                     console.log('skipperOpts.dirname:', skipperOpts.dirname);
 
                     if (_.isString(skipperOpts.dirname)) {
-                      upstreamOrFileStream.fd = path.join(skipperOpts.dirname, basename);
+                      upstreamOrFileStream.skipperFd = path.join(skipperOpts.dirname, basename);
                     }
                     else {
-                      upstreamOrFileStream.fd = basename;
+                      upstreamOrFileStream.skipperFd = basename;
                     }
+
+                    upstreamOrFileStream.fd = upstreamOrFileStream.skipperFd;//« for compatibility
 
                     // Also set `filename`, for advisory purposes.
                     // (can affect logs in adapter)
-                    upstreamOrFileStream.filename = upstreamOrFileStream.fd;
+                    upstreamOrFileStream.filename = upstreamOrFileStream.skipperFd;
 
                     // Now use a little pocket function to load up the appropriate adapter.
                     var adapter = (()=>{
@@ -281,7 +283,7 @@ module.exports = function defineUploadsHook(sails) {
                       console.log('proceed!');
                       if (err) { return done(err); }
                       return done(undefined, {
-                        fd: upstreamOrFileStream.fd,
+                        fd: upstreamOrFileStream.skipperFd,
                         type: ''
                         // (FUTURE: ^^Maybe attempt to sniff this `type` based on extname,
                         // if one was provided.  And/or look for the MIME in the actual stream
