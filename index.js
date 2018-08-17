@@ -230,7 +230,13 @@ module.exports = function defineUploadsHook(sails) {
                       upstreamOrFileStream.skipperFd = basename;
                     }
 
-                    upstreamOrFileStream.fd = upstreamOrFileStream.skipperFd;//« for compatibility
+                    // For compatibility, in addition to `skipperFd` write `fd`, but only if a defined
+                    // `fd` property doesn't already exist.
+                    // (This had to change because Node core started using the `fd` property on file
+                    // streams differently itself.)
+                    if (upstreamOrFileStream.fd === undefined) {
+                      upstreamOrFileStream.fd = upstreamOrFileStream.skipperFd;
+                    }
 
                     // Also set `filename`, for advisory purposes.
                     // (can affect logs in adapter)
