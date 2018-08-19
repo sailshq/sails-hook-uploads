@@ -492,6 +492,48 @@ module.exports = function defineUploadsHook(sails) {
       };//ƒ
 
 
+      /**
+       * .uploadToBase64()
+       *
+       * Convert all of the incoming files in the specified upstream into
+       * base64-encoded strings.
+       *
+       * WARNING: This is potentially very memory-intensive!  Only use if you
+       * know what you're doing!!
+       *
+       * @param {Ref} upstream
+       * @param {Dictionary?} moreOptions
+       * @param {Function?} _explicitCbMaybe
+       *
+       * @returns {Deferred}
+       *          @returns {Array}
+       *              @of {Dictionary}
+       *                  @property {String} fd
+       *                  @property {String} type
+       */
+      sails.uploadToBase64 = function (upstream, moreOptions, _explicitCbMaybe){
+
+        var explicitCb = _.isFunction(moreOptions) ? moreOptions : _explicitCbMaybe;
+
+        var omen = flaverr.omen(sails.upload);
+        //^In development and when debugging, we use an omen for better stack traces.
+
+        return parley(
+          function (done){
+            verifyUpstream(upstream, omen);
+            // var skipperOpts = _.extend({}, sails.config.uploads, moreOptions);
+
+            return done(new Error('Not implemented yet (TODO)'));
+            // upstream.upload(skipperOpts, done);//_∏_
+          },
+          explicitCb||undefined,
+          undefined,
+          undefined,
+          omen
+        );
+      };
+
+
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       // FUTURE: `await sails.mv(fd, destWritable, moreOptions)`
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
