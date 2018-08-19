@@ -109,6 +109,7 @@ module.exports = function defineUploadsHook(sails) {
        *                  @property {String} fd
        *                  @property {String} type
        */
+      if (sails.upload !== undefined) { throw new Error('Cannot attach `sails.upload()` because, for some reason, it already exists!'); }
       sails.upload = function (upstream, moreOptions, _explicitCbMaybe){
 
         var explicitCb = _.isFunction(moreOptions) ? moreOptions : _explicitCbMaybe;
@@ -141,6 +142,7 @@ module.exports = function defineUploadsHook(sails) {
        *              @property {String} fd
        *              @property {String} type
        */
+      if (sails.uploadOne !== undefined) { throw new Error('Cannot attach `sails.uploadOne()` because, for some reason, it already exists!'); }
       sails.uploadOne = function (upstreamOrFileStream, moreOptions, _explicitCbMaybe){
 
         var explicitCb = _.isFunction(moreOptions) ? moreOptions : _explicitCbMaybe;
@@ -333,6 +335,7 @@ module.exports = function defineUploadsHook(sails) {
        *
        * > https://trello.com/c/r86sweSs/159-sailsdownload
        */
+      if (sails.download !== undefined) { throw new Error('Cannot attach `sails.download()` because, for some reason, it already exists!'); }
       sails.download = sails.downloadOne = function (){
         throw new Error(
           'Did you mean `sails.startDownload()`?\n'+
@@ -364,6 +367,7 @@ module.exports = function defineUploadsHook(sails) {
        * @returns {Deferred}
        *          @returns {Stream} [readable stream]
        */
+      if (sails.startDownload !== undefined) { throw new Error('Cannot attach `sails.startDownload()` because, for some reason, it already exists!'); }
       sails.startDownload = function (fd, moreOptions, _explicitCbMaybe){
 
         var explicitCb = _.isFunction(moreOptions) ? moreOptions : _explicitCbMaybe;
@@ -431,6 +435,7 @@ module.exports = function defineUploadsHook(sails) {
        *
        * @throws {Error}
        */
+      if (sails.transload !== undefined) { throw new Error('Cannot attach `sails.transload()` because, for some reason, it already exists!'); }
       sails.transload = sails.transloadOne = function (){
         throw new Error(
           'Did you mean `sails.cp()`?\n'+
@@ -461,6 +466,7 @@ module.exports = function defineUploadsHook(sails) {
        *              @property {String} fd   [the new file descriptor]
        *              @property {String} type
        */
+      if (sails.cp !== undefined) { throw new Error('Cannot attach `sails.cp()` because, for some reason, it already exists!'); }
       sails.cp = function (srcFd, moreSrcOptions, moreDestOptions, _explicitCbMaybe){
 
         var explicitCb = _.isFunction(moreDestOptions) ? moreDestOptions : _explicitCbMaybe;
@@ -511,6 +517,7 @@ module.exports = function defineUploadsHook(sails) {
        *                  @property {String} fd
        *                  @property {String} type
        */
+      if (sails.uploadToBase64 !== undefined) { throw new Error('Cannot attach `sails.uploadToBase64()` because, for some reason, it already exists!'); }
       sails.uploadToBase64 = function (upstream, moreOptions, _explicitCbMaybe){
 
         var explicitCb = _.isFunction(moreOptions) ? moreOptions : _explicitCbMaybe;
@@ -550,6 +557,7 @@ module.exports = function defineUploadsHook(sails) {
        *
        * @returns {Deferred}
        */
+      if (sails.rm !== undefined) { throw new Error('Cannot attach `sails.rm()` because, for some reason, it already exists!'); }
       sails.rm = function (fd, moreOptions, _explicitCbMaybe){
         var explicitCb = _.isFunction(moreOptions) ? moreOptions : _explicitCbMaybe;
 
@@ -594,6 +602,7 @@ module.exports = function defineUploadsHook(sails) {
        * @returns {Deferred}
        *          @returns {Array}
        */
+      if (sails.ls !== undefined) { throw new Error('Cannot attach `sails.ls()` because, for some reason, it already exists!'); }
       sails.ls = function (_explicitCbMaybe){
         var explicitCb = _.isFunction(_explicitCbMaybe) ? _explicitCbMaybe : undefined;
 
