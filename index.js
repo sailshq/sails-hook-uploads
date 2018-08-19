@@ -514,9 +514,9 @@ module.exports = function defineUploadsHook(sails) {
        * @returns {Deferred}
        *          @returns {Array}
        *              @of {Dictionary}
-       *                  @property {String} contents  (base64 encoded bytes)
-       *                  @property {String?} name      (file name, if available)
-       *                  @property {String?} type      (mime type, if available)
+       *                  @property {String} contentBytes   (base64 encoded bytes)
+       *                  @property {String?} name          (file name, if available)
+       *                  @property {String?} type          (mime type, if available)
        */
       if (sails.uploadToBase64 !== undefined) { throw new Error('Cannot attach `sails.uploadToBase64()` because, for some reason, it already exists!'); }
       sails.uploadToBase64 = function (upstream, moreOptions, _explicitCbMaybe){
