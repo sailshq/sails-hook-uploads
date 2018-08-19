@@ -528,10 +528,10 @@ module.exports = function defineUploadsHook(sails) {
         return parley(
           function (done){
             verifyUpstream(upstream, omen);
-            // var skipperOpts = _.extend({}, sails.config.uploads, moreOptions);
+            // FUTURE: tolerate any Readable stream here (but still always send back an array of strings)
 
+            // var skipperOpts = _.extend({}, sails.config.uploads, moreOptions);
             return done(new Error('Not implemented yet (TODO)'));
-            // upstream.upload(skipperOpts, done);//_∏_
           },
           explicitCb||undefined,
           undefined,
