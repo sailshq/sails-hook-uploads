@@ -532,21 +532,35 @@ module.exports = function defineUploadsHook(sails) {
 
         return parley(
           function (done){
+
+            // Handle non-upstream case first: (i.e. just a normal Readable stream):
             try {
               verifyUpstream(upstream, omen);
             } catch (err) {
               if (flaverr.taste('E_NOT_AN_UPSTREAM', err)) {
-                // FUTURE: tolerate any Readable stream here (i.e. and return a single-item array)
-                return done(err);
+                if (true) {
+                  return done(err);
+                } else {
+                  // FUTURE: tolerate any usable Readable stream here
+                  // (i.e. and return a single-item array)
+                  return done(undefined, [
+                    {
+                      name: '…',//« original file name (if stream had something sniffable)
+                      type: '…',//« MIME type (if stream had something sniffable)
+                      contentBytes: '…'//« base64-encoded bytes
+                    }
+                  ]);
+                }
               } else {
                 return done(err);
               }
-            }
+            }//•
 
-            // var skipperOpts = _.extend({}, sails.config.uploads, moreOptions);
-            // TODO
-            var base64EncodedThings = [];
-            return done(undefined, base64EncodedThings);
+            {// -• Otherwise, IWMIH, then we're dealing with an Upstream instance:
+              let base64EncodedThings = [];
+              // TODO
+              return done(undefined, base64EncodedThings);
+            }//∫
           },
           explicitCbMaybe||undefined,
           undefined,
