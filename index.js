@@ -530,7 +530,7 @@ module.exports = function defineUploadsHook(sails) {
 
         var explicitCb = _.isFunction(moreOptions) ? moreOptions : _explicitCbMaybe;
 
-        var omen = flaverr.omen(sails.upload);
+        var omen = flaverr.omen(sails.uploadToBase64);
         //^In development and when debugging, we use an omen for better stack traces.
 
         return parley(
