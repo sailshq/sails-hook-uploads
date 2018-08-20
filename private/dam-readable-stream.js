@@ -18,7 +18,7 @@ var StringDecoder = require('string_decoder').StringDecoder;
  *
  * @param {Ref} readable
  * @param {String?} fromEncoding   (if unspecified, assumes it's coming as utf8)
- * @param {String?} toEncoding     (if unspecified, leaves incoming encoding alone - unless no "fromEncoding" was provided, in which case an error is thrown)
+ * @param {String?} toEncoding     (if unspecified, leaves incoming encoding as-is)
  * @param  {Error?} omen
  * @returns {String}   (the entire stream's contents, as a base64-encoded string)
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -52,13 +52,6 @@ module.exports = function damReadableStream(readable, fromEncoding, toEncoding, 
         return done(flaverr({
           name: 'UsageError',
           message: 'Invalid stream: Must be a usable Readable stream.  (For help: https://sailsjs.com/support)'
-        }, omen));
-      }//•
-
-      if (!toEncoding && !fromEncoding) {
-        return done(flaverr({
-          name: 'UsageError',
-          message: 'Since no "fromEncoding" was provided, a "toEncoding" must be provided -- but no "toEncoding" was passed in.  (For help: https://sailsjs.com/support)'
         }, omen));
       }//•
 
@@ -127,7 +120,7 @@ StringStream.prototype.write = function(data) {
   }
   if (this.fromEncoding) {
     if (Buffer.isBuffer(data) || typeof data === 'number') data = data.toString()
-    data = new Buffer(data, this.fromEncoding)//« FUTURE: deal with this (logs annoying warnings in node ≥10: https://github.com/mhart/StringStream/issues/11)
+    data = Buffer.from(data, this.fromEncoding)// Note: Changed this vs. the original because it has been deprecated in node core (https://github.com/mhart/StringStream/issues/11)
   }
   var string = this.decoder.write(data)
   if (string.length) this.emit('data', string)
@@ -170,7 +163,7 @@ function AlignedStringDecoder(encoding) {
   switch (this.encoding) {
     case 'base64':
       this.write = alignedWrite
-      this.alignedBuffer = new Buffer(3)//« FUTURE: deal with this (logs annoying warnings in node ≥10: https://github.com/mhart/StringStream/issues/11)
+      this.alignedBuffer = Buffer.alloc(3);// Note: Changed this vs. the original because it has been deprecated in node core (https://github.com/mhart/StringStream/issues/11)
       this.alignedBytes = 0
       break
   }
@@ -188,7 +181,7 @@ function alignedWrite(buffer) {
   var rem = (this.alignedBytes + buffer.length) % this.alignedBuffer.length
   if (!rem && !this.alignedBytes) return buffer.toString(this.encoding)
 
-  var returnBuffer = new Buffer(this.alignedBytes + buffer.length - rem)//« FUTURE: deal with this (logs annoying warnings in node ≥10: https://github.com/mhart/StringStream/issues/11)
+  var returnBuffer = Buffer.alloc(this.alignedBytes + buffer.length - rem)// Note: Changed this vs. the original because it has been deprecated in node core (https://github.com/mhart/StringStream/issues/11)
 
   this.alignedBuffer.copy(returnBuffer, 0, 0, this.alignedBytes)
   buffer.copy(returnBuffer, this.alignedBytes, 0, buffer.length - rem)
