@@ -10,6 +10,7 @@ var parley = require('parley');
 var Strings = require('machinepack-strings');
 var defaultFilesystemAdapter = require('skipper-disk');
 var verifyUpstream = require('./private/verify-upstream');
+var damReadableStream = require('./private/dam-readable-stream');
 
 
 /**
@@ -515,6 +516,7 @@ module.exports = function defineUploadsHook(sails) {
        * know what you're doing!!
        *
        * @param {Ref} upstream
+       * @param {String?} fromEncoding   (if unspecified, assumes incoming stream is composed of utf8-encoded data)
        * @param {Function?} explicitCbMaybe
        *
        * @returns {Deferred}
@@ -525,7 +527,7 @@ module.exports = function defineUploadsHook(sails) {
        *                  @property {String?} type          (mime type, if available)
        */
       if (sails.uploadToBase64 !== undefined) { throw new Error('Cannot attach `sails.uploadToBase64()` because, for some reason, it already exists!'); }
-      sails.uploadToBase64 = function (upstream, explicitCbMaybe){
+      sails.uploadToBase64 = function (upstream, fromEncoding, explicitCbMaybe){
 
         var omen = flaverr.omen(sails.uploadToBase64);
         //^In development and when debugging, we use an omen for better stack traces.
@@ -558,8 +560,39 @@ module.exports = function defineUploadsHook(sails) {
 
             {// -• Otherwise, IWMIH, then we're dealing with an Upstream instance:
               let base64EncodedThings = [];
-              // TODO
-              return done(undefined, base64EncodedThings);
+              let firstMajorErrorBesidesTheUpstreamEmittingError;
+              upstream.on('error', (err)=>{
+                return done(err);
+              });//œ
+              upstream.on('data', (readable)=>{
+                if (firstMajorErrorBesidesTheUpstreamEmittingError) {
+                  // If we've already hit a major error, then don't try to do anything else-
+                  // just keep on waiting till everything's done so we can report it.
+                  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                  // FUTURE: we could optimize this, although it's unlikely to matter--
+                  // as it is, you're already loading entire files into memory!  This
+                  // isn't something that will ever work for really big files anyway...
+                  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                  return;
+                }//•
+                damReadableStream(readable, fromEncoding, 'base64', omen).exec((err, fileContentsAsBase64EncodedString)=>{
+                  if (err) {
+                    firstMajorErrorBesidesTheUpstreamEmittingError = firstMajorErrorBesidesTheUpstreamEmittingError || err;
+                  } else {
+                    base64EncodedThings.push({
+                      name: '…',//« TODO: attempt to sniff original file name (if readable has something sniffable)
+                      type: '…',//« TODO: attempt to sniff MIME type (if readable has something sniffable)
+                      contentBytes: fileContentsAsBase64EncodedString
+                    });
+                  }
+                });//_∏_
+              });//œ
+              upstream.on('end', ()=>{
+                if (firstMajorErrorBesidesTheUpstreamEmittingError) {
+                  return done(firstMajorErrorBesidesTheUpstreamEmittingError);
+                }
+                return done(undefined, base64EncodedThings);
+              });//œ
             }//∫
           },
           explicitCbMaybe||undefined,
