@@ -3,9 +3,9 @@
  */
 
 var util = require('util');
-var _ = require('@sailshq/lodash');
 var parley = require('parley');
 var flaverr = require('flaverr');
+var _ = require('@sailshq/lodash');
 var Stream = require('stream');
 var StringDecoder = require('string_decoder').StringDecoder;
 
@@ -21,11 +21,12 @@ var StringDecoder = require('string_decoder').StringDecoder;
 module.exports = function damReadableStream(readable, encoding, omen) {
   return parley(
     (done)=>{
-      if (!readable) {
+      var isProbablyUsableReadableStream = _.isObject(readable) && readable.readable === true && _.isFunction(readable.pipe) && (readable._readableState ? readable._readableState.objectMode !== true : true);
+      if (!isProbablyUsableReadableStream) {
         return done(flaverr({
           name: 'UsageError',
           code: 'E_NOT_A_READABLE_STREAM',
-          message: 'Invalid stream: Must be a Readable stream.  (For help: https://sailsjs.com/support)'
+          message: 'Invalid stream: Must be a usable Readable stream.  (For help: https://sailsjs.com/support)'
         }, omen));
       }//•
 
@@ -36,10 +37,13 @@ module.exports = function damReadableStream(readable, encoding, omen) {
       // Note that we rely on parley's built-in spinlock here in order to ensure
       // that we're not accidentally re-triggering the callback.
       var transforming;
-      var _onErrorForReadableAndTransformStreams = function(err){
+      var _onErrorForReadableAndTransformStreams = (err)=>{
         if (transforming && transforming.removeAllListeners) { transforming.removeAllListeners(); }
         readable.removeListener('error', _onErrorForReadableAndTransformStreams);
-        return done(err);
+        return done(flaverr({
+          message: 'Encountered an error when attempting to dam the contents of the provided Readable stream into a string value.  '+err.message,
+          raw: err
+        }, omen));
       };//ƒ (œ)
       readable.on('error', _onErrorForReadableAndTransformStreams);//œ
 
@@ -49,52 +53,11 @@ module.exports = function damReadableStream(readable, encoding, omen) {
       transforming.on('data', (stringChunk)=>{
         result += stringChunk;
       });//œ
-      transforming.on('end', function() {
+      transforming.on('end', ()=>{
         transforming.removeAllListeners();
         readable.removeListener('error', _onErrorForReadableAndTransformStreams);
         done(undefined, result);
       });//œ
-
-      // OLD:
-      // // We use a self-calling function below in order to impose "finally" logic
-      // // that cleans up any lingering event listeners on streams, just to be safe.
-      // var transforming;
-      // ((proceed)=>{
-      //   function _onErrorForReadable(err){ return proceed(err); }//ƒ (œ)
-
-      //   // Note that we rely on parley's built-in spinlock here in order to ensure
-      //   // that we're not accidentally re-triggering the callback.
-      //   readable.on('error', (err)=>{
-      //     if (transforming && transforming.removeAllListeners) {
-      //       transforming.removeAllListeners();
-      //     }
-      //     done(err);
-      //   });//œ
-
-      //   transforming = readable.pipe(StringStream('base64'));
-
-      //   var result;
-      //   transforming.on('data', (stringChunk)=>{
-      //     result += stringChunk;
-      //   });//œ
-      //   transforming.on('error', (err)=>{
-      //     if (transforming && transforming.removeAllListeners) {
-      //       transforming.removeAllListeners();
-      //     }
-      //     done(err);
-      //   });//œ
-      //   transforming.on('end', function() {
-      //     transforming.removeAllListeners();
-      //     done(undefined, result);
-      //   });//œ
-      // })((err, result)=>{
-      //   if (transforming && transforming.removeAllListeners) {
-      //     transforming.removeAllListeners();
-      //   }
-      //   readable.removeListener('error', _onErrorForReadable);
-      //   if (err) { return done(err); }
-      //   return done(undefined, result);
-      // });//_∏_ (†)
     },
     undefined,
     undefined,
@@ -208,3 +171,6 @@ function alignedWrite(buffer) {
   return returnBuffer.toString(this.encoding)
 }
 /* eslint-enable */
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// </ stringstream >
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
