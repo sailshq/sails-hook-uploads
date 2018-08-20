@@ -121,7 +121,14 @@ module.exports = function defineUploadsHook(sails) {
           function (done){
             verifyUpstream(upstream, omen);
             var skipperOpts = _.extend({}, sails.config.uploads, moreOptions);
-            upstream.upload(skipperOpts, done);//_∏_
+            upstream.upload(skipperOpts, function (err, result) {
+              if (err) { return done(err); }
+              if (!_.isArray(result)) {
+                sails.log.warn('For some reason, Skipper did not return an array for this upstream.  If you have a sec, please let us know you saw this message by following the instructions at https://sailsjs.com/bugs.  Thank you!');
+                result = [];
+              }
+              return done(undefined, result);
+            });//_∏_
           },
           explicitCb||undefined,
           undefined,
