@@ -515,8 +515,7 @@ module.exports = function defineUploadsHook(sails) {
        * know what you're doing!!
        *
        * @param {Ref} upstream
-       * @param {Dictionary?} moreOptions
-       * @param {Function?} _explicitCbMaybe
+       * @param {Function?} explicitCbMaybe
        *
        * @returns {Deferred}
        *          @returns {Array}
@@ -526,22 +525,30 @@ module.exports = function defineUploadsHook(sails) {
        *                  @property {String?} type          (mime type, if available)
        */
       if (sails.uploadToBase64 !== undefined) { throw new Error('Cannot attach `sails.uploadToBase64()` because, for some reason, it already exists!'); }
-      sails.uploadToBase64 = function (upstream, moreOptions, _explicitCbMaybe){
-
-        var explicitCb = _.isFunction(moreOptions) ? moreOptions : _explicitCbMaybe;
+      sails.uploadToBase64 = function (upstream, explicitCbMaybe){
 
         var omen = flaverr.omen(sails.uploadToBase64);
         //^In development and when debugging, we use an omen for better stack traces.
 
         return parley(
           function (done){
-            verifyUpstream(upstream, omen);
-            // FUTURE: tolerate any Readable stream here (but still always send back an array of strings)
+            try {
+              verifyUpstream(upstream, omen);
+            } catch (err) {
+              if (flaverr.taste('E_NOT_AN_UPSTREAM', err)) {
+                // FUTURE: tolerate any Readable stream here (i.e. and return a single-item array)
+                return done(err);
+              } else {
+                return done(err);
+              }
+            }
 
             // var skipperOpts = _.extend({}, sails.config.uploads, moreOptions);
-            return done(new Error('Not implemented yet (TODO)'));
+            // TODO
+            var base64EncodedThings = [];
+            return done(undefined, base64EncodedThings);
           },
-          explicitCb||undefined,
+          explicitCbMaybe||undefined,
           undefined,
           undefined,
           omen
