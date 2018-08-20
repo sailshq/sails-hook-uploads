@@ -13,26 +13,54 @@ var StringDecoder = require('string_decoder').StringDecoder;
 /**
  * damReadableStream()
  *
+ * Juice the contents of a readable stream with the specified "fromEncoding"
+ * and return the resulting string (converted to "toEncoding", if specified).
+ *
  * @param {Ref} readable
- * @param {String?} encoding   (if unspecified, defaults to base64)
+ * @param {String?} fromEncoding   (if unspecified, assumes it's coming as utf8)
+ * @param {String?} toEncoding     (if unspecified, leaves incoming encoding alone - unless no "fromEncoding" was provided, in which case an error is thrown)
  * @param  {Error?} omen
  * @returns {String}   (the entire stream's contents, as a base64-encoded string)
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ * Example usage:
+ * ```
+ * var encodedReadmeContents = await require('./private/dam-readable-stream')(
+ *   fs.createReadStream('./README.md'),
+ *   'utf8',
+ *   'base64'
+ * );
+ *
+ * fs.writeFileSync('./experiment.base64', encodedReadmeContents);
+ * ```
+ *
+ * And:
+ * ```
+ * var decodedReadmeContents = await require('./private/dam-readable-stream')(
+ *   fs.createReadStream('./experiment.base64'),
+ *   'base64',
+ *   'utf8'
+ * );
+ *
+ * console.log(decodedReadmeContents);
+ * ```
  */
-module.exports = function damReadableStream(readable, encoding, omen) {
+module.exports = function damReadableStream(readable, fromEncoding, toEncoding, omen) {
   return parley(
     (done)=>{
       var isProbablyUsableReadableStream = _.isObject(readable) && readable.readable === true && _.isFunction(readable.pipe) && (readable._readableState ? readable._readableState.objectMode !== true : true);
       if (!isProbablyUsableReadableStream) {
         return done(flaverr({
           name: 'UsageError',
-          code: 'E_NOT_A_READABLE_STREAM',
           message: 'Invalid stream: Must be a usable Readable stream.  (For help: https://sailsjs.com/support)'
         }, omen));
       }//•
 
-      if (encoding === undefined) {
-        encoding = 'base64';
-      }
+      if (!toEncoding && !fromEncoding) {
+        return done(flaverr({
+          name: 'UsageError',
+          message: 'Since no "fromEncoding" was provided, a "toEncoding" must be provided -- but no "toEncoding" was passed in.  (For help: https://sailsjs.com/support)'
+        }, omen));
+      }//•
 
       // Note that we rely on parley's built-in spinlock here in order to ensure
       // that we're not accidentally re-triggering the callback.
@@ -47,8 +75,8 @@ module.exports = function damReadableStream(readable, encoding, omen) {
       };//ƒ (œ)
       readable.on('error', _onErrorForReadableAndTransformStreams);//œ
 
-      var result;
-      transforming = readable.pipe(StringStream('base64'));
+      var result = '';
+      transforming = readable.pipe(StringStream(fromEncoding||'', toEncoding||''));
       transforming.on('error', _onErrorForReadableAndTransformStreams);//œ
       transforming.on('data', (stringChunk)=>{
         result += stringChunk;
@@ -99,7 +127,7 @@ StringStream.prototype.write = function(data) {
   }
   if (this.fromEncoding) {
     if (Buffer.isBuffer(data) || typeof data === 'number') data = data.toString()
-    data = new Buffer(data, this.fromEncoding)
+    data = new Buffer(data, this.fromEncoding)//« FUTURE: deal with this (logs annoying warnings in node ≥10: https://github.com/mhart/StringStream/issues/11)
   }
   var string = this.decoder.write(data)
   if (string.length) this.emit('data', string)
@@ -142,7 +170,7 @@ function AlignedStringDecoder(encoding) {
   switch (this.encoding) {
     case 'base64':
       this.write = alignedWrite
-      this.alignedBuffer = new Buffer(3)
+      this.alignedBuffer = new Buffer(3)//« FUTURE: deal with this (logs annoying warnings in node ≥10: https://github.com/mhart/StringStream/issues/11)
       this.alignedBytes = 0
       break
   }
@@ -160,7 +188,7 @@ function alignedWrite(buffer) {
   var rem = (this.alignedBytes + buffer.length) % this.alignedBuffer.length
   if (!rem && !this.alignedBytes) return buffer.toString(this.encoding)
 
-  var returnBuffer = new Buffer(this.alignedBytes + buffer.length - rem)
+  var returnBuffer = new Buffer(this.alignedBytes + buffer.length - rem)//« FUTURE: deal with this (logs annoying warnings in node ≥10: https://github.com/mhart/StringStream/issues/11)
 
   this.alignedBuffer.copy(returnBuffer, 0, 0, this.alignedBytes)
   buffer.copy(returnBuffer, this.alignedBytes, 0, buffer.length - rem)
