@@ -55,6 +55,10 @@ module.exports = function damReadableStream(readable, fromEncoding, toEncoding, 
         }, omen));
       }//•
 
+      // Set defaults for encoding parameters:
+      fromEncoding = fromEncoding || 'utf8';
+      toEncoding = toEncoding || fromEncoding;
+
       // Note that we rely on parley's built-in spinlock here in order to ensure
       // that we're not accidentally re-triggering the callback.
       var transforming;
@@ -69,7 +73,7 @@ module.exports = function damReadableStream(readable, fromEncoding, toEncoding, 
       readable.on('error', _onErrorForReadableAndTransformStreams);//œ
 
       var result = '';
-      transforming = readable.pipe(StringStream(fromEncoding||'utf8', toEncoding||fromEncoding||'utf8'));
+      transforming = readable.pipe(StringStream(fromEncoding, toEncoding));
       transforming.on('error', _onErrorForReadableAndTransformStreams);//œ
       transforming.on('data', (stringChunk)=>{
         result += stringChunk;
