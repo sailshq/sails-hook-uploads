@@ -128,6 +128,7 @@ module.exports = function defineUploadsHook(sails) {
                 sails.log.warn('For some reason, Skipper did not return an array for this upstream.  If you have a sec, please let us know you saw this message by following the instructions at https://sailsjs.com/bugs.  Thank you!');
                 result = [];
               }
+              // TODO: attach filename as `name`
               return done(undefined, result);
             });//_∏_
           },
@@ -292,6 +293,7 @@ module.exports = function defineUploadsHook(sails) {
                       if (err) { return done(err); }
                       return done(undefined, {
                         fd: upstreamOrFileStream.skipperFd,
+                        // FUTURE: attach filename as `name`
                         type: ''
                         // (FUTURE: ^^Maybe attempt to sniff this `type` based on extname,
                         // if one was provided.  And/or look for the MIME in the actual stream
@@ -321,6 +323,7 @@ module.exports = function defineUploadsHook(sails) {
                 // FUTURE: Support automatically cleaning up after these files.
                 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
               }//•
+              // TODO: attach filename as `name`
               return done(undefined, uploadedFiles[0]);
             });//_∏_
 
@@ -579,6 +582,7 @@ module.exports = function defineUploadsHook(sails) {
                   if (err) {
                     firstMajorErrorBesidesTheUpstreamEmittingError = firstMajorErrorBesidesTheUpstreamEmittingError || err;
                   } else {
+                    console.log('\n\n----------READABLE---------\n',readable,'\n------</readable>---------');
                     base64EncodedThings.push({
                       name: '…',//« TODO: attempt to sniff original file name (if readable has something sniffable)
                       type: '…',//« TODO: attempt to sniff MIME type (if readable has something sniffable)
