@@ -167,7 +167,7 @@ function AlignedStringDecoder(encoding) {
   switch (this.encoding) {
     case 'base64':
       this.write = alignedWrite
-      this.alignedBuffer = Buffer.alloc(3);// Note: Changed this vs. the original because it has been deprecated in node core (https://github.com/mhart/StringStream/issues/11)
+      this.alignedBuffer = Buffer.allocUnsafe(3);// Note: Changed this vs. the original because it has been deprecated in node core (https://github.com/mhart/StringStream/issues/11)
       this.alignedBytes = 0
       break
   }
