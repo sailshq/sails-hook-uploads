@@ -538,7 +538,7 @@ module.exports = function defineUploadsHook(sails) {
        * know what you're doing!!
        *
        * @param {Ref} upstream
-       * @param {String?} fromEncoding   (if unspecified, assumes incoming stream is composed of utf8-encoded data)
+       * @param {Dictionary?} options
        * @param {Function?} explicitCbMaybe
        *
        * @returns {Deferred}
@@ -549,10 +549,14 @@ module.exports = function defineUploadsHook(sails) {
        *                  @property {String?} type          (mime type, if available)
        */
       if (sails.uploadToBase64 !== undefined) { throw new Error('Cannot attach `sails.uploadToBase64()` because, for some reason, it already exists!'); }
-      sails.uploadToBase64 = function (upstream, fromEncoding, explicitCbMaybe){
-
+      sails.uploadToBase64 = function (upstream, options, explicitCbMaybe){
         var omen = flaverr.omen(sails.uploadToBase64);
         //^In development and when debugging, we use an omen for better stack traces.
+
+        options = options || {};
+        if (options.maxBytes) {
+          throw new Error('`maxBytes` option is not supported yet for `sails.uploadToBase64()`');// TODO
+        }
 
         return parley(
           function (done){
@@ -562,19 +566,16 @@ module.exports = function defineUploadsHook(sails) {
               verifyUpstream(upstream, omen);
             } catch (err) {
               if (flaverr.taste('E_NOT_AN_UPSTREAM', err)) {
-                if (true) {
-                  return done(err);
-                } else {
-                  // FUTURE: tolerate any usable Readable stream here
-                  // (i.e. and return a single-item array)
-                  return done(undefined, [
-                    {
-                      name: '',//« original file name (if stream had something sniffable)
-                      type: '',//« MIME type (if stream had something sniffable)
-                      contentBytes: '…'//« base64-encoded bytes
-                    }
-                  ]);
-                }
+                return done(err);
+                // FUTURE: tolerate any usable Readable stream here
+                // (i.e. and return a single-item array)
+                // return done(undefined, [
+                //   {
+                //     name: '…',//« original file name (if stream had something sniffable)
+                //     type: '…',//« MIME type (if stream had something sniffable)
+                //     contentBytes: '…'//« base64-encoded bytes
+                //   }
+                // ]);
               } else {
                 return done(err);
               }
@@ -597,11 +598,10 @@ module.exports = function defineUploadsHook(sails) {
                   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                   return;
                 }//•
-                damReadableStream(readable, fromEncoding, 'base64', omen).exec((err, fileContentsAsBase64EncodedString)=>{
+                damReadableStream(readable, omen).exec((err, fileContentsAsBase64EncodedString)=>{
                   if (err) {
                     firstMajorErrorBesidesTheUpstreamEmittingError = firstMajorErrorBesidesTheUpstreamEmittingError || err;
                   } else {
-                    console.log('\n\n----------READABLE---------\n',readable,'\n------</readable>---------');
                     var sniffedOriginalFileName = readable.filename || readable.name;
                     base64EncodedThings.push({
                       name: sniffedOriginalFileName || '',

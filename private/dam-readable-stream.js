@@ -2,49 +2,32 @@
  * Module dependencies
  */
 
-var util = require('util');
-var parley = require('parley');
-var flaverr = require('flaverr');
 var _ = require('@sailshq/lodash');
-var Stream = require('stream');
-var StringDecoder = require('string_decoder').StringDecoder;
+var flaverr = require('flaverr');
+var B64 = require('b64');
+var parley = require('parley');
 
 
 /**
  * damReadableStream()
  *
- * Juice the contents of a readable stream with the specified "fromEncoding"
- * and return the resulting string (converted to "toEncoding", if specified).
+ * Receive the complete contents of a readable stream, encode them as base64,
+ * and return the resulting base64-encoded string.
  *
  * @param {Ref} readable
- * @param {String?} fromEncoding   (if unspecified, assumes it's coming as utf8)
- * @param {String?} toEncoding     (if unspecified, leaves incoming encoding as-is)
  * @param  {Error?} omen
  * @returns {String}   (the entire stream's contents, as a base64-encoded string)
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * Example usage:
  * ```
  * var encodedReadmeContents = await require('./private/dam-readable-stream')(
- *   fs.createReadStream('./README.md'),
- *   'utf8',
- *   'base64'
+ *   fs.createReadStream('./README.md')
  * );
  *
  * fs.writeFileSync('./experiment.base64', encodedReadmeContents);
  * ```
- *
- * And:
- * ```
- * var decodedReadmeContents = await require('./private/dam-readable-stream')(
- *   fs.createReadStream('./experiment.base64'),
- *   'base64',
- *   'utf8'
- * );
- *
- * console.log(decodedReadmeContents);
- * ```
  */
-module.exports = function damReadableStream(readable, fromEncoding, toEncoding, omen) {
+module.exports = function damReadableStream(readable, omen) {
   return parley(
     (done)=>{
       var isProbablyUsableReadableStream = _.isObject(readable) && readable.readable === true && _.isFunction(readable.pipe) && (readable._readableState ? readable._readableState.objectMode !== true : true);
@@ -55,34 +38,28 @@ module.exports = function damReadableStream(readable, fromEncoding, toEncoding, 
         }, omen));
       }//•
 
-      // Set defaults for encoding parameters:
-      fromEncoding = fromEncoding || 'utf8';
-      toEncoding = toEncoding || fromEncoding;
-
-      // Note that we rely on parley's built-in spinlock here in order to ensure
-      // that we're not accidentally re-triggering the callback.
-      var transforming;
-      var _onErrorForReadableAndTransformStreams = (err)=>{
-        if (transforming && transforming.removeAllListeners) { transforming.removeAllListeners(); }
-        readable.removeListener('error', _onErrorForReadableAndTransformStreams);
+      // Encode bytes to base 64, streaming them in and building a data URI.
+      var encoder = new B64.Encoder();
+      var transformedStream = readable.pipe(encoder);
+      transformedStream.on('error', function () { /* Just for safety. */ });//œ
+      transformedStream.once('error', (err)=>{
         return done(flaverr({
-          message: 'Encountered an error when attempting to dam the contents of the provided Readable stream into a string value.  '+err.message,
+          message: 'Encountered an error when attempting to dam the contents of the provided Readable stream into a string value (e.g. base64).  '+err.message,
           raw: err
         }, omen));
-      };//ƒ (œ)
-      readable.on('error', _onErrorForReadableAndTransformStreams);//œ
+      });//œ
+      // ^Note that we rely on parley's built-in spinlock here in order to ensure
+      // that we're not accidentally re-triggering the callback.
 
-      var result = '';
-      transforming = readable.pipe(StringStream(fromEncoding, toEncoding));
-      transforming.on('error', _onErrorForReadableAndTransformStreams);//œ
-      transforming.on('data', (stringChunk)=>{
-        result += stringChunk;
-      });//œ
-      transforming.on('end', ()=>{
-        transforming.removeAllListeners();
-        readable.removeListener('error', _onErrorForReadableAndTransformStreams);
-        done(undefined, result);
-      });//œ
+      // Pool up the liquid dripping out of our base 64 string encoder
+      // and send that accumulated string (`base64Str`) back as the result.
+      var base64Str = '';
+      transformedStream.on('data', function(bytes){
+        base64Str += bytes.toString();
+      });
+      transformedStream.on('end', function () {
+        return done(undefined, base64Str);
+      });//_∏_
     },
     undefined,
     undefined,
@@ -90,112 +67,3 @@ module.exports = function damReadableStream(readable, fromEncoding, toEncoding, 
     omen
   );
 };//ƒ
-
-
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// The the rest of this file was pulled from "StringStream", a package written
-// by @mhart and available under the MIT License.  (Thanks Michael!)
-// Specifically, we're using v0.0.6:
-// https://github.com/mhart/StringStream/blob/fee31c5c4a5efc7c7cc2fde4aee633dedefd6d67/stringstream.js
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-/* eslint-disable */
-function StringStream(from, to) {
-  if (!(this instanceof StringStream)) return new StringStream(from, to)
-
-  Stream.call(this)
-
-  if (from == null) from = 'utf8'
-
-  this.readable = this.writable = true
-  this.paused = false
-  this.toEncoding = (to == null ? from : to)
-  this.fromEncoding = (to == null ? '' : from)
-  this.decoder = new AlignedStringDecoder(this.toEncoding)
-}
-util.inherits(StringStream, Stream)
-
-StringStream.prototype.write = function(data) {
-  if (!this.writable) {
-    var err = new Error('stream not writable')
-    err.code = 'EPIPE'
-    this.emit('error', err)
-    return false
-  }
-  if (this.fromEncoding) {
-    if (Buffer.isBuffer(data) || typeof data === 'number') data = data.toString()
-    data = Buffer.from(data, this.fromEncoding)// Note: Changed this vs. the original because it has been deprecated in node core (https://github.com/mhart/StringStream/issues/11)
-  }
-  var string = this.decoder.write(data)
-  if (string.length) this.emit('data', string)
-  return !this.paused
-}
-
-StringStream.prototype.flush = function() {
-  if (this.decoder.flush) {
-    var string = this.decoder.flush()
-    if (string.length) this.emit('data', string)
-  }
-}
-
-StringStream.prototype.end = function() {
-  if (!this.writable && !this.readable) return
-  this.flush()
-  this.emit('end')
-  this.writable = this.readable = false
-  this.destroy()
-}
-
-StringStream.prototype.destroy = function() {
-  this.decoder = null
-  this.writable = this.readable = false
-  this.emit('close')
-}
-
-StringStream.prototype.pause = function() {
-  this.paused = true
-}
-
-StringStream.prototype.resume = function () {
-  if (this.paused) this.emit('drain')
-  this.paused = false
-}
-
-function AlignedStringDecoder(encoding) {
-  StringDecoder.call(this, encoding)
-
-  switch (this.encoding) {
-    case 'base64':
-      this.write = alignedWrite
-      this.alignedBuffer = Buffer.allocUnsafe(3);// Note: Changed this vs. the original because it has been deprecated in node core (https://github.com/mhart/StringStream/issues/11)
-      this.alignedBytes = 0
-      break
-  }
-}
-util.inherits(AlignedStringDecoder, StringDecoder)
-
-AlignedStringDecoder.prototype.flush = function() {
-  if (!this.alignedBuffer || !this.alignedBytes) return ''
-  var leftover = this.alignedBuffer.toString(this.encoding, 0, this.alignedBytes)
-  this.alignedBytes = 0
-  return leftover
-}
-
-function alignedWrite(buffer) {
-  var rem = (this.alignedBytes + buffer.length) % this.alignedBuffer.length
-  if (!rem && !this.alignedBytes) return buffer.toString(this.encoding)
-
-  var returnBuffer = Buffer.alloc(this.alignedBytes + buffer.length - rem)// Note: Changed this vs. the original because it has been deprecated in node core (https://github.com/mhart/StringStream/issues/11)
-
-  this.alignedBuffer.copy(returnBuffer, 0, 0, this.alignedBytes)
-  buffer.copy(returnBuffer, this.alignedBytes, 0, buffer.length - rem)
-
-  buffer.copy(this.alignedBuffer, 0, buffer.length - rem, buffer.length)
-  this.alignedBytes = rem
-
-  return returnBuffer.toString(this.encoding)
-}
-/* eslint-enable */
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// </ stringstream >
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
