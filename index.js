@@ -294,8 +294,8 @@ module.exports = function defineUploadsHook(sails) {
                       if (err) { return done(err); }
                       return done(undefined, {
                         fd: upstreamOrFileStream.skipperFd,
-                        // FUTURE: attach filename as `name`
-                        type: ''
+                        // name: '',//« TODO: attempt to sniff original file name (if readable has something sniffable)
+                        type: '',//« TODO: attempt to sniff MIME type (if readable has something sniffable)
                         // (FUTURE: ^^Maybe attempt to sniff this `type` based on extname,
                         // if one was provided.  And/or look for the MIME in the actual stream
                         // ref-- there's only a few different common kinds of streams from
@@ -552,8 +552,8 @@ module.exports = function defineUploadsHook(sails) {
                   // (i.e. and return a single-item array)
                   return done(undefined, [
                     {
-                      name: '…',//« original file name (if stream had something sniffable)
-                      type: '…',//« MIME type (if stream had something sniffable)
+                      name: '',//« original file name (if stream had something sniffable)
+                      type: '',//« MIME type (if stream had something sniffable)
                       contentBytes: '…'//« base64-encoded bytes
                     }
                   ]);
@@ -586,8 +586,8 @@ module.exports = function defineUploadsHook(sails) {
                   } else {
                     console.log('\n\n----------READABLE---------\n',readable,'\n------</readable>---------');
                     base64EncodedThings.push({
-                      name: '…',//« TODO: attempt to sniff original file name (if readable has something sniffable)
-                      type: '…',//« TODO: attempt to sniff MIME type (if readable has something sniffable)
+                      name: 'TODO',//« TODO: attempt to sniff original file name (if readable has something sniffable)
+                      type: 'TODO',//« TODO: attempt to sniff MIME type (if readable has something sniffable)
                       contentBytes: fileContentsAsBase64EncodedString
                     });
                   }
