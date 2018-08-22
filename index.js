@@ -307,13 +307,21 @@ module.exports = function defineUploadsHook(sails) {
                       return done(undefined, {
                         fd: upstreamOrFileStream.skipperFd,
                         name: upstreamOrFileStream.filename,
-                        type: MimeTypes.lookup(upstreamOrFileStream.filename) || '',
-                        // ^^We attempt to sniff the MIME `type` however we can get it, either
-                        // from the original Readable, if available, or based on extname of the
-                        // original filename, if that's available.  There's only a few different
-                        // common kinds of streams from Node core libraries and other popular npm
-                        // packages like `request`, so this kind of sniffing is actually pretty
-                        // effective.  (Also note we don't default to application/octet-stream.)
+                        type: (
+                          // We attempt to sniff the MIME `type` however we can get it, either
+                          // from the original Readable, if available, or based on extname of the
+                          // original filename, if that's available.  There's only a few different
+                          // common kinds of streams from Node core libraries and other popular npm
+                          // packages like `request`, so this kind of sniffing is actually pretty
+                          // effective.  (Also note we don't default to application/octet-stream.)
+                          (
+                            _.isObject(upstreamOrFileStream.response) &&
+                            _.isObject(upstreamOrFileStream.response.headers) &&
+                            _.isString(upstreamOrFileStream.response.headers['content-type'])
+                          ) ||
+                          MimeTypes.lookup(upstreamOrFileStream.filename) ||
+                          ''
+                        )
                       });
                     });//_∏_  (†)
 
@@ -604,9 +612,19 @@ module.exports = function defineUploadsHook(sails) {
                   } else {
                     var sniffedOriginalFileName = readable.filename || readable.name;
                     base64EncodedThings.push({
+                      contentBytes: fileContentsAsBase64EncodedString,
                       name: sniffedOriginalFileName || '',
-                      type: MimeTypes.lookup(sniffedOriginalFileName) || '',// « See implementation of .uploadOne() for more information about how MIME type and download name sniffing work
-                      contentBytes: fileContentsAsBase64EncodedString
+                      type: (
+                        // See implementation of .uploadOne() for more information
+                        // about how MIME type and download name sniffing work.
+                        (
+                          _.isObject(sniffedOriginalFileName.response) &&
+                          _.isObject(sniffedOriginalFileName.response.headers) &&
+                          _.isString(sniffedOriginalFileName.response.headers['content-type'])
+                        ) ||
+                        MimeTypes.lookup(sniffedOriginalFileName) ||
+                        ''
+                      )
                     });
                   }
                 });//_∏_
