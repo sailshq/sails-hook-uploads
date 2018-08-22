@@ -5,6 +5,7 @@
 var util = require('util');
 var path = require('path');
 var _ = require('@sailshq/lodash');
+var MimeTypes = require('mime-types');
 var flaverr = require('flaverr');
 var parley = require('parley');
 var Strings = require('machinepack-strings');
@@ -128,8 +129,7 @@ module.exports = function defineUploadsHook(sails) {
                 sails.log.warn('For some reason, Skipper did not return an array for this upstream.  If you have a sec, please let us know you saw this message by following the instructions at https://sailsjs.com/bugs.  Thank you!');
                 result = [];
               }
-              // TODO: try to locate filename and ensure it is attachd as `name` if known
-              // TODO: try to locate MIME type and ensure it is attachd as `type` if known
+              // TODO: Compatibility: try to locate filename & MIME type for each item within `result` and ensure they are attached as `name` and `type` if known, otherwise empty string
               return done(undefined, result);
             });//_∏_
           },
@@ -253,6 +253,7 @@ module.exports = function defineUploadsHook(sails) {
                     // Also set `filename`, for advisory purposes.
                     // (can affect logs in adapter)
                     upstreamOrFileStream.filename = upstreamOrFileStream.skipperFd;
+                    // ^^TODO: a better sniff
 
                     // Now use a little pocket function to load up the appropriate adapter.
                     var adapter = (()=>{
@@ -292,14 +293,17 @@ module.exports = function defineUploadsHook(sails) {
 
                     })((err)=>{
                       if (err) { return done(err); }
+
                       return done(undefined, {
                         fd: upstreamOrFileStream.skipperFd,
-                        // name: '',//« TODO: attempt to sniff original file name (if readable has something sniffable)
-                        type: '',//« TODO: attempt to sniff MIME type (if readable has something sniffable)
-                        // (FUTURE: ^^Maybe attempt to sniff this `type` based on extname,
-                        // if one was provided.  And/or look for the MIME in the actual stream
-                        // ref-- there's only a few different common kinds of streams from
-                        // Node core libraries and other popular npm packages like `request`)
+                        name: upstreamOrFileStream.filename,
+                        type: MimeTypes.lookup(upstreamOrFileStream.filename) || '',
+                        // ^^We attempt to sniff the MIME `type` however we can get it, either
+                        // from the original Readable, if available, or based on extname of the
+                        // original filename, if that's available.  There's only a few different
+                        // common kinds of streams from Node core libraries and other popular npm
+                        // packages like `request`, so this kind of sniffing is actually pretty
+                        // effective.  (Also note we don't default to application/octet-stream.)
                       });
                     });//_∏_  (†)
 
@@ -324,8 +328,7 @@ module.exports = function defineUploadsHook(sails) {
                 // FUTURE: Support automatically cleaning up after these files.
                 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
               }//•
-              // TODO: try to locate filename and ensure it is attachd as `name` if known
-              // TODO: try to locate MIME type and ensure it is attachd as `type` if known
+              // TODO: Compatibility: try to locate filename & MIME type for each item within `result` and ensure they are attached as `name` and `type` if known, otherwise empty string
               return done(undefined, uploadedFiles[0]);
             });//_∏_
 
@@ -585,9 +588,10 @@ module.exports = function defineUploadsHook(sails) {
                     firstMajorErrorBesidesTheUpstreamEmittingError = firstMajorErrorBesidesTheUpstreamEmittingError || err;
                   } else {
                     console.log('\n\n----------READABLE---------\n',readable,'\n------</readable>---------');
+                    var sniffedOriginalFileName = readable.filename || readable.name;
                     base64EncodedThings.push({
-                      name: 'TODO',//« TODO: attempt to sniff original file name (if readable has something sniffable)
-                      type: 'TODO',//« TODO: attempt to sniff MIME type (if readable has something sniffable)
+                      name: sniffedOriginalFileName || '',
+                      type: MimeTypes.lookup(sniffedOriginalFileName) || '',// « See implementation of .uploadOne() for more information about how MIME type and download name sniffing work
                       contentBytes: fileContentsAsBase64EncodedString
                     });
                   }
