@@ -129,7 +129,14 @@ module.exports = function defineUploadsHook(sails) {
                 sails.log.warn('For some reason, Skipper did not return an array for this upstream.  If you have a sec, please let us know you saw this message by following the instructions at https://sailsjs.com/bugs.  Thank you!');
                 result = [];
               }
-              // TODO: Compatibility: try to locate filename & MIME type for each item within `result` and ensure they are attached as `name` and `type` if known, otherwise empty string
+              // For compatibility: try to determine filename for each item
+              // within `result` and ensure it is attached as `name` if known,
+              // otherwise empty string.
+              for (let file of result) {
+                if (file.name === undefined) {
+                  file.name = file.filename || '';
+                }
+              }//∞
               return done(undefined, result);
             });//_∏_
           },
@@ -252,8 +259,11 @@ module.exports = function defineUploadsHook(sails) {
 
                     // Also set `filename`, for advisory purposes.
                     // (can affect logs in adapter)
-                    upstreamOrFileStream.filename = upstreamOrFileStream.skipperFd;
-                    // ^^TODO: a better sniff
+                    upstreamOrFileStream.filename = (
+                      upstreamOrFileStream.filename ||
+                      upstreamOrFileStream.name ||
+                      upstreamOrFileStream.skipperFd
+                    );
 
                     // Now use a little pocket function to load up the appropriate adapter.
                     var adapter = (()=>{
@@ -328,7 +338,11 @@ module.exports = function defineUploadsHook(sails) {
                 // FUTURE: Support automatically cleaning up after these files.
                 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
               }//•
-              // TODO: Compatibility: try to locate filename & MIME type for each item within `result` and ensure they are attached as `name` and `type` if known, otherwise empty string
+              // For compatibility: try to determine filename and ensure it is
+              // attached as `name` if known, otherwise empty string.
+              if (uploadedFiles[0] && uploadedFiles[0].name === undefined) {
+                uploadedFiles[0].name = uploadedFiles[0].filename || '';
+              }
               return done(undefined, uploadedFiles[0]);
             });//_∏_
 
