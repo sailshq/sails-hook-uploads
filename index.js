@@ -589,7 +589,7 @@ module.exports = function defineUploadsHook(sails) {
               }
             }//•
 
-            {// -• Otherwise, IWMIH, then we're dealing with an Upstream instance:
+            {// •- Otherwise, IWMIH, then we're dealing with an Upstream instance:
               let base64EncodedThings = [];
               let firstMajorErrorBesidesTheUpstreamEmittingError;
               upstream.on('error', (err)=>{
