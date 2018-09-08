@@ -2,6 +2,7 @@
  * Module dependencies
  */
 
+var path = require('path');
 var _ = require('@sailshq/lodash');
 var flaverr = require('flaverr');
 var MimeTypes = require('mime-types');
@@ -44,6 +45,10 @@ module.exports = function sniffReadableStream(readable, omen) {
     sniffedOriginalFileName = readable.filename;
   } else if (_.isString(readable.name) && readable.name !== '') {
     sniffedOriginalFileName = readable.name;
+  } else if (_.isString(readable.path) && readable.path !== '') {
+    try {
+      sniffedOriginalFileName = path.basename(readable.path);
+    } catch (unusedErr) {}
   }
 
   // We attempt to sniff the MIME `type` however we can get it, either
