@@ -528,13 +528,13 @@ module.exports = function defineUploadsHook(sails) {
       /**
        * .uploadToBase64()
        *
-       * Convert all of the incoming files in the specified upstream into
+       * Convert the incoming file(s) in the specified upstream into
        * base64-encoded strings.
        *
        * WARNING: This is potentially very memory-intensive!  Only use if you
        * know what you're doing!!
        *
-       * @param {Ref} upstream
+       * @param {Ref} upstreamOrFileStream
        * @param {Dictionary?} options
        * @param {Function?} explicitCbMaybe
        *
@@ -546,7 +546,7 @@ module.exports = function defineUploadsHook(sails) {
        *                  @property {String?} type          (mime type, if available)
        */
       if (sails.uploadToBase64 !== undefined) { throw new Error('Cannot attach `sails.uploadToBase64()` because, for some reason, it already exists!'); }
-      sails.uploadToBase64 = function (upstream, options, explicitCbMaybe){
+      sails.uploadToBase64 = function (upstreamOrFileStream, options, explicitCbMaybe){
         var omen = flaverr.omen(sails.uploadToBase64);
         //^In development and when debugging, we use an omen for better stack traces.
 
@@ -560,20 +560,26 @@ module.exports = function defineUploadsHook(sails) {
 
             // Handle non-upstream case first: (i.e. just a normal Readable stream):
             try {
-              verifyUpstream(upstream, omen);
+              verifyUpstream(upstreamOrFileStream, omen);
             } catch (err) {
               if (flaverr.taste('E_NOT_AN_UPSTREAM', err)) {
-                return done(new Error('Miscellaneous Readable streams are not supported yet for `sails.uploadToBase64()`,  (Please use only Upstream instances from Sails/Skipper.)'));
-
-                // FUTURE: tolerate any usable Readable stream here
-                // (i.e. and return a single-item array)
-                // return done(undefined, [
-                //   {
-                //     name: '…',//« original file name (if stream had something sniffable)
-                //     type: '…',//« MIME type (if stream had something sniffable)
-                //     contentBytes: '…'//« base64-encoded bytes
-                //   }
-                // ]);
+                let readable = upstreamOrFileStream;
+                damReadableStream(readable, omen)
+                .exec((err, fileContentsAsBase64EncodedString)=>{
+                  if (err) { return done(err); }//•
+                  let sniffed;
+                  try {
+                    sniffed = sniffReadableStream(readable, omen);
+                  } catch (err) { return done(err); }//•
+                  return done(undefined, [
+                    {
+                      contentBytes: fileContentsAsBase64EncodedString,//« base64-encoded bytes
+                      name: sniffed.name,//« original file name (if stream had something sniffable)
+                      type: sniffed.type,//« MIME type (if stream had something sniffable)
+                    }
+                  ]);
+                });//_∏_
+                return;//•
               } else {
                 return done(err);
               }
@@ -582,10 +588,10 @@ module.exports = function defineUploadsHook(sails) {
             {// •- Otherwise, IWMIH, then we're dealing with an Upstream instance:
               let base64EncodedThings = [];
               let firstMajorErrorBesidesTheUpstreamEmittingError;
-              upstream.on('error', (err)=>{
+              upstreamOrFileStream.on('error', (err)=>{
                 return done(err);
               });//œ
-              upstream.on('data', (readable)=>{
+              upstreamOrFileStream.on('data', (readable)=>{
                 if (firstMajorErrorBesidesTheUpstreamEmittingError) {
                   // If we've already hit a major error, then don't try to do anything else-
                   // just keep on waiting till everything's done so we can report it.
@@ -614,7 +620,7 @@ module.exports = function defineUploadsHook(sails) {
                   }//ﬁ
                 });//_∏_
               });//œ
-              upstream.on('end', ()=>{
+              upstreamOrFileStream.on('end', ()=>{
                 if (firstMajorErrorBesidesTheUpstreamEmittingError) {
                   return done(firstMajorErrorBesidesTheUpstreamEmittingError);
                 }

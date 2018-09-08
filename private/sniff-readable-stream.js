@@ -4,7 +4,6 @@
 
 var path = require('path');
 var _ = require('@sailshq/lodash');
-var flaverr = require('flaverr');
 var MimeTypes = require('mime-types');
 
 
@@ -15,7 +14,6 @@ var MimeTypes = require('mime-types');
  * MIME type for it, as well as the original filename (if available).
  *
  * @param {Ref} readable
- * @param  {Error?} omen
  * @returns {Dictionary}
  *          @property {String} name    (original file name - or empty string if not sniffable)
  *          @property {String} type    (MIME type - or empty string if not sniffable)
@@ -30,14 +28,7 @@ var MimeTypes = require('mime-types');
  * console.log('Original MIME type:', sniffed.type);
  * ```
  */
-module.exports = function sniffReadableStream(readable, omen) {
-  var isProbablyUsableReadableStream = _.isObject(readable) && readable.readable === true && _.isFunction(readable.pipe) && (readable._readableState ? readable._readableState.objectMode !== true : true);
-  if (!isProbablyUsableReadableStream) {
-    throw flaverr({
-      name: 'UsageError',
-      message: 'Invalid stream: Must be a usable Readable stream.  (For help: https://sailsjs.com/support)'
-    }, omen);
-  }//•
+module.exports = function sniffReadableStream(readable) {
 
   // Sniff file name, if available.
   var sniffedOriginalFileName;

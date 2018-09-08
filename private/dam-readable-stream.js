@@ -34,17 +34,19 @@ module.exports = function damReadableStream(readable, omen) {
       if (!isProbablyUsableReadableStream) {
         return done(flaverr({
           name: 'UsageError',
-          message: 'Invalid stream: Must be a usable Readable stream.  (For help: https://sailsjs.com/support)'
+          message: 'Invalid stream: Must be a usable Readable stream.  (For help: https://sailsjs.com/support)',
+          internalTrace: new Error()
         }, omen));
       }//•
 
       // Encode bytes to base 64, streaming them in and building a data URI.
       var encoder = new B64.Encoder();
       var transformedStream = readable.pipe(encoder);
-      transformedStream.on('error', function () { /* Just for safety. */ });//œ
+      transformedStream.on('error', ()=>{ /* Just for safety. */ });//œ
       transformedStream.once('error', (err)=>{
         return done(flaverr({
           message: 'Encountered an error when attempting to dam the contents of the provided Readable stream into a string value (e.g. base64).  '+err.message,
+          internalTrace: new Error(),
           raw: err
         }, omen));
       });//œ
