@@ -563,7 +563,8 @@ module.exports = function defineUploadsHook(sails) {
               verifyUpstream(upstream, omen);
             } catch (err) {
               if (flaverr.taste('E_NOT_AN_UPSTREAM', err)) {
-                return done(err);
+                return done(new Error('Miscellaneous Readable streams are not supported yet for `sails.uploadToBase64()`,  (Please use only Upstream instances from Sails/Skipper.)'));
+
                 // FUTURE: tolerate any usable Readable stream here
                 // (i.e. and return a single-item array)
                 // return done(undefined, [
