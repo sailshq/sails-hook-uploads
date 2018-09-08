@@ -5,13 +5,13 @@
 var util = require('util');
 var path = require('path');
 var _ = require('@sailshq/lodash');
-var MimeTypes = require('mime-types');
 var flaverr = require('flaverr');
 var parley = require('parley');
 var Strings = require('machinepack-strings');
 var defaultFilesystemAdapter = require('skipper-disk');
 var verifyUpstream = require('./private/verify-upstream');
 var damReadableStream = require('./private/dam-readable-stream');
+var sniffReadableStream = require('./private/sniff-readable-stream');
 
 
 /**
@@ -303,30 +303,12 @@ module.exports = function defineUploadsHook(sails) {
 
                     })((err)=>{
                       if (err) { return done(err); }
-
-                      return done(undefined, {
-                        fd: upstreamOrFileStream.skipperFd,
-                        name: upstreamOrFileStream.filename,
-                        type: (
-                          // We attempt to sniff the MIME `type` however we can get it, either
-                          // from the original Readable, if available, or based on extname of the
-                          // original filename, if that's available.  There's only a few different
-                          // common kinds of streams from Node core libraries and other popular npm
-                          // packages like `request`, so this kind of sniffing is actually pretty
-                          // effective.  (Also note we don't default to application/octet-stream.)
-                          (
-                            _.isObject(upstreamOrFileStream.response) &&
-                            _.isObject(upstreamOrFileStream.response.headers) &&
-                            _.isString(upstreamOrFileStream.response.headers['content-type'])
-                          ) ||
-                          MimeTypes.lookup(upstreamOrFileStream.filename) ||
-                          ''
-                        )
-                      });
+                      let fileInfo = sniffReadableStream(upstreamOrFileStream, omen);
+                      return done(undefined, _.extend(fileInfo, {
+                        fd: upstreamOrFileStream.skipperFd
+                      }));
                     });//_∏_  (†)
-
                   });//_∏_  (†)
-
                   return;//•
 
                 default:
@@ -610,23 +592,11 @@ module.exports = function defineUploadsHook(sails) {
                   if (err) {
                     firstMajorErrorBesidesTheUpstreamEmittingError = firstMajorErrorBesidesTheUpstreamEmittingError || err;
                   } else {
-                    var sniffedOriginalFileName = readable.filename || readable.name;
-                    base64EncodedThings.push({
+                    let fileInfo = sniffReadableStream(readable, omen);
+                    base64EncodedThings.push(_.extend(fileInfo, {
                       contentBytes: fileContentsAsBase64EncodedString,
-                      name: sniffedOriginalFileName || '',
-                      type: (
-                        // See implementation of .uploadOne() for more information
-                        // about how MIME type and download name sniffing work.
-                        (
-                          _.isObject(readable.response) &&
-                          _.isObject(readable.response.headers) &&
-                          _.isString(readable.response.headers['content-type'])
-                        ) ||
-                        MimeTypes.lookup(sniffedOriginalFileName) ||
-                        ''
-                      )
-                    });
-                  }
+                    }));
+                  }//ﬁ
                 });//_∏_
               });//œ
               upstream.on('end', ()=>{
