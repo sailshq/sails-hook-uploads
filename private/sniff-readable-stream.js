@@ -22,12 +22,12 @@ var MimeTypes = require('mime-types');
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * Example usage:
  * ```
- * var originalFileInfo = require('./private/sniff-readable-stream')(
+ * var sniffed = require('./private/sniff-readable-stream')(
  *   fs.createReadStream('./README.md')
  * );
  *
- * console.log('Original file name:', originalFileInfo.name);
- * console.log('Original MIME type:', originalFileInfo.type);
+ * console.log('Original file name:', sniffed.name);
+ * console.log('Original MIME type:', sniffed.type);
  * ```
  */
 module.exports = function sniffReadableStream(readable, omen) {
