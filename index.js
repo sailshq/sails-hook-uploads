@@ -303,10 +303,17 @@ module.exports = function defineUploadsHook(sails) {
 
                     })((err)=>{
                       if (err) { return done(err); }
-                      let fileInfo = sniffReadableStream(upstreamOrFileStream, omen);
-                      return done(undefined, _.extend(fileInfo, {
-                        fd: upstreamOrFileStream.skipperFd
-                      }));
+
+                      let sniffed;
+                      try {
+                        sniffed = sniffReadableStream(upstreamOrFileStream, omen);
+                      } catch (err) { return done(err); }
+
+                      return done(undefined, {
+                        fd: upstreamOrFileStream.skipperFd,
+                        name: sniffed.name,
+                        type: sniffed.type,
+                      });
                     });//_∏_  (†)
                   });//_∏_  (†)
                   return;//•
@@ -592,10 +599,17 @@ module.exports = function defineUploadsHook(sails) {
                   if (err) {
                     firstMajorErrorBesidesTheUpstreamEmittingError = firstMajorErrorBesidesTheUpstreamEmittingError || err;
                   } else {
-                    let fileInfo = sniffReadableStream(readable, omen);
-                    base64EncodedThings.push(_.extend(fileInfo, {
+                    let sniffed;
+                    try {
+                      sniffed = sniffReadableStream(readable, omen);
+                    } catch (err) {
+                      firstMajorErrorBesidesTheUpstreamEmittingError = firstMajorErrorBesidesTheUpstreamEmittingError || err;
+                    }
+                    base64EncodedThings.push({
                       contentBytes: fileContentsAsBase64EncodedString,
-                    }));
+                      name: sniffed.name,
+                      type: sniffed.type,
+                    });
                   }//ﬁ
                 });//_∏_
               });//œ
