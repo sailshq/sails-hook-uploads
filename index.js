@@ -618,9 +618,9 @@ module.exports = function defineUploadsHook(sails) {
                         // See implementation of .uploadOne() for more information
                         // about how MIME type and download name sniffing work.
                         (
-                          _.isObject(sniffedOriginalFileName.response) &&
-                          _.isObject(sniffedOriginalFileName.response.headers) &&
-                          _.isString(sniffedOriginalFileName.response.headers['content-type'])
+                          _.isObject(readable.response) &&
+                          _.isObject(readable.response.headers) &&
+                          _.isString(readable.response.headers['content-type'])
                         ) ||
                         MimeTypes.lookup(sniffedOriginalFileName) ||
                         ''
