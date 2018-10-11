@@ -15,7 +15,7 @@ npm install sails-hook-uploads
 var uploaded = await sails.uploadOne(inputs.myFile);
 ```
 
-For more usage tips, see the [Platzi course on Sails.js](https://courses.platzi.com).
+For more usage tips, see the [Ration.io example app and tutorial course](https://ration.io/).
 
 
 ## License
