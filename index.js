@@ -402,6 +402,10 @@ module.exports = function defineUploadsHook(sails) {
         var omen = flaverr.omen(sails.startDownload);
         //^In development and when debugging, we use an omen for better stack traces.
 
+        if (!_.isString(fd) || fd === '') {
+          throw new Error('Provided "fd" aka file descriptor is invalid.  Expecting a truthy string, but instead got '+util.inspect(fd));
+        }//•
+
         return parley(
           (done)=>{
 
