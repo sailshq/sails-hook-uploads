@@ -17,13 +17,12 @@ var uploaded = await sails.uploadOne(inputs.someFile);
 
 Available methods:
 
-- .upload()  _(supports Sails single or multi-file upload)_
-- .uploadOne()    _(supports Sails single-file upload or any Readable stream; useful for transloading)_
-- .uploadToBase64()  _(supports Sails single-file upload or any Readable stream)_
-- .startDownload()
-- .cp()
+- .uploadOne(upstreamOrReadable)    _(supports Sails single-file upload of 0 or 1 file, **or** any Readable stream)_
+- .upload(upstream)  _(accepts incoming Sails file uploads consisting of 0 files, 1 file, 2 files, or more)_
+- .startDownload(fd)  _(useful for downloading a file; returns a Readable)_
+- .cp(srcFd, srcOpts, destOpts)  _(useful for transloading an already-uploaded file to a different destination)_
+- .rm(fd)
 - .ls()
-- .rm()
 
 All methods use configuration from `sails.config.uploads`.  Most inherited settings can be overridden (see source code for details- it's pretty simple in there).
 
