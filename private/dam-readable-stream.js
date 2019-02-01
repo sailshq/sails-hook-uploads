@@ -11,23 +11,26 @@ var parley = require('parley');
 /**
  * damReadableStream()
  *
- * Receive the complete contents of a readable stream, encode them as base64,
- * and return the resulting base64-encoded string.
+ * Receive the complete contents of a readable stream, potentially encode them
+ * as base64 (if base64 encoding is enabled) and then return the resulting
+ * (potentially base64-encoded) string.
  *
  * @param {Ref} readable
+ * @param {String?} outputEncoding  (if defined, must be "base64")
  * @param  {Error?} omen
- * @returns {String}   (the entire stream's contents, as a base64-encoded string)
+ * @returns {String}   (the entire stream's contents, as a potentially-encoded string)
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * Example usage:
  * ```
  * var encodedReadmeContents = await require('./private/dam-readable-stream')(
- *   fs.createReadStream('./README.md')
+ *   fs.createReadStream('./README.md'),
+ *   'base64'
  * );
  *
  * fs.writeFileSync('./experiment.base64', encodedReadmeContents);
  * ```
  */
-module.exports = function damReadableStream(readable, omen) {
+module.exports = function damReadableStream(readable, outputEncoding, omen) {
   return parley(
     (done)=>{
       var isProbablyUsableReadableStream = _.isObject(readable) && readable.readable === true && _.isFunction(readable.pipe) && (readable._readableState ? readable._readableState.objectMode !== true : true);
@@ -38,30 +41,56 @@ module.exports = function damReadableStream(readable, omen) {
           internalTrace: new Error()
         }, omen));
       }//•
-
-      // Encode bytes to base 64, streaming them in and building a data URI.
-      var encoder = new B64.Encoder();
-      var transformedStream = readable.pipe(encoder);
-      transformedStream.on('error', ()=>{ /* Just for safety. */ });//œ
-      transformedStream.once('error', (err)=>{
+      if (outputEncoding !== undefined && outputEncoding !== 'base64') {
         return done(flaverr({
-          message: 'Encountered an error when attempting to dam the contents of the provided Readable stream into a string value (e.g. base64).  '+err.message,
-          internalTrace: new Error(),
-          raw: err
+          name: 'UsageError',
+          message: 'Invalid output encoding: If specified, must be either `undefined` or \'base64\'.  (For help: https://sailsjs.com/support)',
+          internalTrace: new Error()
         }, omen));
-      });//œ
-      // ^Note that we rely on parley's built-in spinlock here in order to ensure
-      // that we're not accidentally re-triggering the callback.
+      }//•
 
-      // Pool up the liquid dripping out of our base 64 string encoder
-      // and send that accumulated string (`base64Str`) back as the result.
-      var base64Str = '';
-      transformedStream.on('data', function(bytes){
-        base64Str += bytes.toString();
-      });
-      transformedStream.on('end', function () {
-        return done(undefined, base64Str);
-      });//_∏_
+      //  ██████╗  █████╗ ███████╗███████╗ ██████╗ ██╗  ██╗
+      //  ██╔══██╗██╔══██╗██╔════╝██╔════╝██╔════╝ ██║  ██║
+      //  ██████╔╝███████║███████╗█████╗  ███████╗ ███████║
+      //  ██╔══██╗██╔══██║╚════██║██╔══╝  ██╔═══██╗╚════██║
+      //  ██████╔╝██║  ██║███████║███████╗╚██████╔╝     ██║
+      //  ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝ ╚═════╝      ╚═╝
+      //
+      if (outputEncoding === 'base64') {
+        // Encode bytes to base 64, streaming them in and building a data URI.
+        let encoder = new B64.Encoder();
+        let transformedStream = readable.pipe(encoder);
+        transformedStream.on('error', ()=>{ /* Just for safety. */ });//œ
+        transformedStream.once('error', (err)=>{
+          return done(flaverr({
+            message: 'Encountered an error when attempting to dam the contents of the provided Readable stream into a string value (e.g. base64).  '+err.message,
+            internalTrace: new Error(),
+            raw: err
+          }, omen));
+        });//œ
+        // ^Note that we rely on parley's built-in spinlock here in order to ensure
+        // that we're not accidentally re-triggering the callback.
+
+        // Pool up the liquid dripping out of our base 64 string encoder
+        // and send that accumulated string (`base64Str`) back as the result.
+        let base64Str = '';
+        transformedStream.on('data', function(bytes){
+          base64Str += bytes.toString();
+        });
+        transformedStream.on('end', function () {
+          return done(undefined, base64Str);
+        });//_∏_
+      }
+      //  ██████╗ ██╗      █████╗ ██╗███╗   ██╗    ████████╗███████╗██╗  ██╗████████╗
+      //  ██╔══██╗██║     ██╔══██╗██║████╗  ██║    ╚══██╔══╝██╔════╝╚██╗██╔╝╚══██╔══╝
+      //  ██████╔╝██║     ███████║██║██╔██╗ ██║       ██║   █████╗   ╚███╔╝    ██║
+      //  ██╔═══╝ ██║     ██╔══██║██║██║╚██╗██║       ██║   ██╔══╝   ██╔██╗    ██║
+      //  ██║     ███████╗██║  ██║██║██║ ╚████║       ██║   ███████╗██╔╝ ██╗   ██║
+      //  ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝       ╚═╝   ╚══════╝╚═╝  ╚═╝   ╚═╝
+      //
+      else {
+        throw new Error('todo');
+      }
     },
     undefined,
     undefined,

@@ -529,6 +529,9 @@ module.exports = function defineUploadsHook(sails) {
       };//ƒ
 
 
+      // TODO: .reservoir()
+
+
       /**
        * .uploadToBase64()
        *
@@ -568,7 +571,7 @@ module.exports = function defineUploadsHook(sails) {
             } catch (err) {
               if (flaverr.taste('E_NOT_AN_UPSTREAM', err)) {
                 let readable = upstreamOrFileStream;
-                damReadableStream(readable, omen)
+                damReadableStream(readable, 'base64', omen)
                 .exec((err, fileContentsAsBase64EncodedString)=>{
                   if (err) { return done(err); }//•
                   let sniffed;
@@ -606,7 +609,7 @@ module.exports = function defineUploadsHook(sails) {
                   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                   return;
                 }//•
-                damReadableStream(readable, omen).exec((err, fileContentsAsBase64EncodedString)=>{
+                damReadableStream(readable, 'base64', omen).exec((err, fileContentsAsBase64EncodedString)=>{
                   if (err) {
                     firstMajorErrorBesidesTheUpstreamEmittingError = firstMajorErrorBesidesTheUpstreamEmittingError || err;
                   } else {
@@ -637,7 +640,7 @@ module.exports = function defineUploadsHook(sails) {
           undefined,
           omen
         );
-      };
+      };//ƒ
 
 
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
