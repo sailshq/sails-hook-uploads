@@ -17,8 +17,9 @@ var uploaded = await sails.uploadOne(inputs.someFile);
 
 Available methods:
 
-- .uploadOne(upstreamOrReadable)    _(supports Sails single-file upload of 0 or 1 file, **or** any Readable stream)_
-- .upload(upstream)  _(accepts incoming Sails file uploads consisting of 0 files, 1 file, 2 files, or more)_
+- .uploadOne(upstreamOrReadable)    _(accepts any Readable stream, **or** an incoming Sails file upload of 0 or 1 file; returns either `undefined` or a dictionary w/ information about the uploaded file data.)_
+- .upload(upstream)  _(accepts any incoming Sails file upload -- whether it consists of 0, 1, or ≥2 files; returns an array regardless.)_
+- .reservoir(upstreamOrReadable)  _(accepts any Readable stream, **or** any incoming Sails file upload -- whether it consists of 0, 1, or ≥2 files; returns an array regardless.)_
 - .startDownload(fd)  _(useful for downloading a file; returns a Readable)_
 - .cp(srcFd, srcOpts, destOpts)  _(useful for transloading an already-uploaded file to a different destination)_
 - .rm(fd)

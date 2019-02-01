@@ -370,7 +370,7 @@ module.exports = function defineUploadsHook(sails) {
           'Example usage:\n'+
           '\n'+
           '    var downloading = await sails.startDownload();\n'+
-          '    return exits.success(downloading);\n'
+          '    return downloading;\n'
         );
       };//ƒ
 
@@ -529,14 +529,133 @@ module.exports = function defineUploadsHook(sails) {
       };//ƒ
 
 
-      // TODO: .reservoir()
+
+      /**
+       * .reservoir()
+       *
+       * Convert the incoming Readable/Upstream into an array of info dictionaries,
+       * each containing an encoded string representing data or file contents.
+       *
+       * WARNING: This is potentially very memory-intensive!  Only use if you
+       * know what you're doing!!
+       *
+       * @param {Ref} upstreamOrFileStream
+       * @param {Dictionary?} options
+       *        @property {String?} encoding  (defaults to 'utf8', but also supports 'base64')
+       * @param {Function?} explicitCbMaybe
+       *
+       * @returns {Deferred}
+       *          @returns {Array}
+       *              @of {Dictionary}
+       *                  @property {String} contentBytes   (encoded bytes, utf8 by default)
+       *                  @property {String?} name          (file name, if available)
+       *                  @property {String?} type          (mime type, if available)
+       */
+      if (sails.reservoir !== undefined) { throw new Error('Cannot attach `sails.reservoir()` because, for some reason, it already exists!'); }
+      sails.reservoir = function (upstreamOrFileStream, options, explicitCbMaybe){
+        var omen = flaverr.omen(sails.reservoir);
+        //^In development and when debugging, we use an omen for better stack traces.
+
+        options = options || {};
+        if (options.maxBytes) {
+          throw new Error('`maxBytes` option is not supported yet for `sails.reservoir()`');// TODO
+        }//•
+        if (!_.contains([undefined, 'utf8', 'base64'], options.encoding)) {
+          throw new Error('If specified, `encoding` option should be set to either \'utf8\' or \'base64\'.');
+        }//•
+
+        var outputEncoding;
+        if (options.encoding === undefined) {
+          outputEncoding = 'utf8';
+        } else {
+          outputEncoding = options.encoding;
+        }
+
+        return parley(
+          function (done){
+
+            // Handle non-upstream case first: (i.e. just a normal Readable stream):
+            try {
+              verifyUpstream(upstreamOrFileStream, omen);
+            } catch (err) {
+              if (flaverr.taste('E_NOT_AN_UPSTREAM', err)) {
+                let readable = upstreamOrFileStream;
+                damReadableStream(readable, outputEncoding, omen)
+                .exec((err, fileContentsAsString)=>{
+                  if (err) { return done(err); }//•
+                  let sniffed;
+                  try {
+                    sniffed = sniffReadableStream(readable, omen);
+                  } catch (err) { return done(err); }//•
+                  return done(undefined, [
+                    {
+                      contentBytes: fileContentsAsString,//« utf8-encoded or base64-encoded bytes
+                      name: sniffed.name,//« original file name (if stream had something sniffable)
+                      type: sniffed.type,//« MIME type (if stream had something sniffable)
+                    }
+                  ]);
+                });//_∏_
+                return;//•
+              } else {
+                return done(err);
+              }
+            }//•
+
+            {// •- Otherwise, IWMIH, then we're dealing with an Upstream instance:
+              let encodedThings = [];
+              let firstMajorErrorBesidesTheUpstreamEmittingError;
+              upstreamOrFileStream.on('error', (err)=>{
+                return done(err);
+              });//œ
+              upstreamOrFileStream.on('data', (readable)=>{
+                if (firstMajorErrorBesidesTheUpstreamEmittingError) {
+                  // If we've already hit a major error, then don't try to do anything else-
+                  // just keep on waiting till everything's done so we can report it.
+                  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                  // FUTURE: we could optimize this, although it's unlikely to matter--
+                  // as it is, you're already loading entire files into memory!  This
+                  // isn't something that will ever work for really big files anyway...
+                  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                  return;
+                }//•
+                damReadableStream(readable, outputEncoding, omen).exec((err, fileContentsAsEncodedString)=>{
+                  if (err) {
+                    firstMajorErrorBesidesTheUpstreamEmittingError = firstMajorErrorBesidesTheUpstreamEmittingError || err;
+                  } else {
+                    let sniffed;
+                    try {
+                      sniffed = sniffReadableStream(readable, omen);
+                    } catch (err) {
+                      firstMajorErrorBesidesTheUpstreamEmittingError = firstMajorErrorBesidesTheUpstreamEmittingError || err;
+                    }
+                    encodedThings.push({
+                      contentBytes: fileContentsAsEncodedString,
+                      name: sniffed.name,
+                      type: sniffed.type,
+                    });
+                  }//ﬁ
+                });//_∏_
+              });//œ
+              upstreamOrFileStream.on('end', ()=>{
+                if (firstMajorErrorBesidesTheUpstreamEmittingError) {
+                  return done(firstMajorErrorBesidesTheUpstreamEmittingError);
+                }
+                return done(undefined, encodedThings);
+              });//œ
+            }//∫
+          },
+          explicitCbMaybe||undefined,
+          undefined,
+          undefined,
+          omen
+        );
+      };//ƒ
 
 
       /**
        * .uploadToBase64()
        *
-       * Convert the incoming file(s) in the specified upstream into
-       * base64-encoded strings.
+       * Convert the incoming Readable/file upload(s) into encoded strings.
        *
        * WARNING: This is potentially very memory-intensive!  Only use if you
        * know what you're doing!!
@@ -554,93 +673,20 @@ module.exports = function defineUploadsHook(sails) {
        */
       if (sails.uploadToBase64 !== undefined) { throw new Error('Cannot attach `sails.uploadToBase64()` because, for some reason, it already exists!'); }
       sails.uploadToBase64 = function (upstreamOrFileStream, options, explicitCbMaybe){
-        var omen = flaverr.omen(sails.uploadToBase64);
-        //^In development and when debugging, we use an omen for better stack traces.
-
-        options = options || {};
-        if (options.maxBytes) {
-          throw new Error('`maxBytes` option is not supported yet for `sails.uploadToBase64()`');// TODO
-        }
-
-        return parley(
-          function (done){
-
-            // Handle non-upstream case first: (i.e. just a normal Readable stream):
-            try {
-              verifyUpstream(upstreamOrFileStream, omen);
-            } catch (err) {
-              if (flaverr.taste('E_NOT_AN_UPSTREAM', err)) {
-                let readable = upstreamOrFileStream;
-                damReadableStream(readable, 'base64', omen)
-                .exec((err, fileContentsAsBase64EncodedString)=>{
-                  if (err) { return done(err); }//•
-                  let sniffed;
-                  try {
-                    sniffed = sniffReadableStream(readable, omen);
-                  } catch (err) { return done(err); }//•
-                  return done(undefined, [
-                    {
-                      contentBytes: fileContentsAsBase64EncodedString,//« base64-encoded bytes
-                      name: sniffed.name,//« original file name (if stream had something sniffable)
-                      type: sniffed.type,//« MIME type (if stream had something sniffable)
-                    }
-                  ]);
-                });//_∏_
-                return;//•
-              } else {
-                return done(err);
-              }
-            }//•
-
-            {// •- Otherwise, IWMIH, then we're dealing with an Upstream instance:
-              let base64EncodedThings = [];
-              let firstMajorErrorBesidesTheUpstreamEmittingError;
-              upstreamOrFileStream.on('error', (err)=>{
-                return done(err);
-              });//œ
-              upstreamOrFileStream.on('data', (readable)=>{
-                if (firstMajorErrorBesidesTheUpstreamEmittingError) {
-                  // If we've already hit a major error, then don't try to do anything else-
-                  // just keep on waiting till everything's done so we can report it.
-                  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-                  // FUTURE: we could optimize this, although it's unlikely to matter--
-                  // as it is, you're already loading entire files into memory!  This
-                  // isn't something that will ever work for really big files anyway...
-                  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-                  return;
-                }//•
-                damReadableStream(readable, 'base64', omen).exec((err, fileContentsAsBase64EncodedString)=>{
-                  if (err) {
-                    firstMajorErrorBesidesTheUpstreamEmittingError = firstMajorErrorBesidesTheUpstreamEmittingError || err;
-                  } else {
-                    let sniffed;
-                    try {
-                      sniffed = sniffReadableStream(readable, omen);
-                    } catch (err) {
-                      firstMajorErrorBesidesTheUpstreamEmittingError = firstMajorErrorBesidesTheUpstreamEmittingError || err;
-                    }
-                    base64EncodedThings.push({
-                      contentBytes: fileContentsAsBase64EncodedString,
-                      name: sniffed.name,
-                      type: sniffed.type,
-                    });
-                  }//ﬁ
-                });//_∏_
-              });//œ
-              upstreamOrFileStream.on('end', ()=>{
-                if (firstMajorErrorBesidesTheUpstreamEmittingError) {
-                  return done(firstMajorErrorBesidesTheUpstreamEmittingError);
-                }
-                return done(undefined, base64EncodedThings);
-              });//œ
-            }//∫
-          },
-          explicitCbMaybe||undefined,
-          undefined,
-          undefined,
-          omen
-        );
+        var omenForDeprecationWarning = flaverr.omen(sails.uploadToBase64);
+        console.warn(flaverr({
+          message:
+          'warn: `sails.uploadToBase64()` is deprecated in favor of its more flexible cousin: `sails.reservoir()`\n'+
+          '\n'+
+          'Example usage:\n'+
+          '\n'+
+          '    var encodedUploads = await sails.reservoir(incoming, {encoding: \'base64\'});\n'+
+          '\n'+
+          '(Tip: The following stack trace might help locate where this is being called from.)'
+        }), omenForDeprecationWarning);
+        return sails.reservoir(upstreamOrFileStream, _.extend({ encoding: 'base64' }, options||{}), explicitCbMaybe);
       };//ƒ
+
 
 
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
