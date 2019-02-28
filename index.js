@@ -205,8 +205,8 @@ module.exports = function defineUploadsHook(sails) {
                   }//•
 
                   // If this is probably a usable readable stream, try to use it.
-                  // But first attach the `fd` property. (Otherwise, the adapter will choke.)
-                  // And to do that, we need to determine the unique file descriptor (`fd`).
+                  // But first attach the `skipperFd` property. (Otherwise, the adapter will choke.)
+                  // And to do that, we need to determine the unique file descriptor.
                   // (This represents the location where file should be written in the remote fs.)
                   //
                   // > Here we mirror the normal behavior of saveAs from Skipper:
