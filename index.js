@@ -200,7 +200,7 @@ module.exports = function defineUploadsHook(sails) {
                   var isProbablyUsableReadableStream = _.isObject(upstreamOrFileStream) && upstreamOrFileStream.readable === true && _.isFunction(upstreamOrFileStream.pipe) && (upstreamOrFileStream._readableState ? upstreamOrFileStream._readableState.objectMode !== true : true);
                   if (!isProbablyUsableReadableStream) {
                     return done(new Error(
-                      'Invalid stream: Any chance you forgot to include `files: [\'nameOfSomeInput\']` at the top level of your action?  Otherwise, make sure you are using a valid incoming stream: either an upstream or a usable Node.js binary Readable stream (e.g. from `fs.createReadStream(…)` or `require(\'request\').get(…)`)'
+                      'Invalid stream: Any chance you forgot to include `files: [\'nameOfSomeInput\']` at the top level of your action?  Otherwise, make sure you are using a valid incoming stream: either an upstream or a usable Node.js binary Readable stream (e.g. from `fs.createReadStream(…)`, or a PassThrough stream, or `require(\'request\').get(…)`)'
                     ));
                   }//•
 
