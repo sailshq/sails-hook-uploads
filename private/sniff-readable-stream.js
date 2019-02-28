@@ -48,8 +48,9 @@ module.exports = function sniffReadableStream(readable) {
   // common kinds of streams from Node core libraries and other popular npm
   // packages like `request`, so this kind of sniffing is actually pretty
   // effective.  (Also note we don't default to application/octet-stream -- that
-  // way it's still easy to tell if the snifffig failed.)
+  // way it's still easy to tell if the sniffing failed.)
   var sniffedMimeType;
+  // Sniff Readable from "request" package
   if (
     _.isObject(readable.response) &&
     _.isObject(readable.response.headers) &&
@@ -60,6 +61,9 @@ module.exports = function sniffReadableStream(readable) {
   } else if (sniffedOriginalFileName && MimeTypes.lookup(sniffedOriginalFileName)) {
     sniffedMimeType = MimeTypes.lookup(sniffedOriginalFileName);
   }
+
+  // FUTURE: (maybe) Also attempt to stniff MIME from a trusted property of the
+  // PassThrough stream that comes back sails.helpers.http.getStream()
 
   return {
     name: sniffedOriginalFileName || '',
