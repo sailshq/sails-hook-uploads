@@ -363,6 +363,7 @@ module.exports = function defineUploadsHook(sails) {
        * > https://trello.com/c/r86sweSs/159-sailsdownload
        */
       if (sails.download !== undefined) { throw new Error('Cannot attach `sails.download()` because, for some reason, it already exists!'); }
+      if (sails.downloadOne !== undefined) { throw new Error('Cannot attach `sails.downloadOne()` because, for some reason, it already exists!'); }
       sails.download = sails.downloadOne = function (){
         throw new Error(
           'Did you mean `sails.startDownload()`?\n'+
