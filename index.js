@@ -51,7 +51,7 @@ module.exports = function defineUploadsHook(sails) {
      */
     initialize: function (done) {
 
-      sails.log.debug('Initializing custom hook (`uploads`)');
+      sails.log.verbose('Initializing hook (`sails-hook-uploads`)');
 
       // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       // FUTURE: Add support for generic sails.uploadAny() functionality:
