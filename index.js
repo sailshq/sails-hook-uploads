@@ -309,6 +309,11 @@ module.exports = function defineUploadsHook(sails) {
                         sniffed = sniffReadableStream(upstreamOrFileStream, omen);
                       } catch (err) { return done(err); }
 
+                      var adapterOpts = _.extend({}, sails.config.uploads, moreOptions);
+                      if (adapterOpts.adapter || defaultFilesystemAdapter === defaultFilesystemAdapter) {
+                        upstreamOrFileStream.skipperFd = adapterOpts.dirpath + '/' + upstreamOrFileStream.skipperFd;
+                      }
+
                       return done(undefined, {
                         fd: upstreamOrFileStream.skipperFd,
                         name: sniffed.name,
