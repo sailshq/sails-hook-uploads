@@ -1,6 +1,6 @@
 {
   "name": "sails-hook-uploads",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "A hook for wrapping file upload support with async/await in Sails.",
   "main": "index.js",
   "scripts": {
