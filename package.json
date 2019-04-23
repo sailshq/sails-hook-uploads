@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@sailshq/lodash": "^3.10.2",
-    "b64": "4.0.0",
+    "b64": "4.1.2",
     "flaverr": "^1.9.0",
     "machinepack-strings": "^6.0.0-1",
     "mime-types": "2.1.19",
